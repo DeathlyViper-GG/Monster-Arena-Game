@@ -10,6 +10,12 @@
 
   // One clock for every blade in the world: terrain.js ticks it each frame.
   C.wind = C.wind || { value: 0 };
+  const GRASS_THRESHOLDS = { vale: 0.40, shore: 0.47, pine: 0.44, mire: 0.39, ember: 0.59, crown: 0.53 };
+  const GRASS_PALETTES = {
+    pine: [0.29, 0.42, 0.39], mire: [0.27, 0.34, 0.43],
+    ember: [0.12, 0.36, 0.48], crown: [0.25, 0.18, 0.53],
+    shore: [0.17, 0.32, 0.48], vale: [0.235, 0.40, 0.43]
+  };
 
   function clearAt(x, z) {
     if (C.reach && C.reach.pathContains && C.reach.pathContains(x, z, 90)) return true;
@@ -52,7 +58,7 @@
     return out;
   }
 
-  /* ---- grass: two quads crossed, with a painted tuft on them ----------- */
+  /* ---- grass: two crossed, textured cards, grouped by ground cover ------ */
   let TUFT = null;
   function tuftTexture() {
     if (TUFT) return TUFT;
@@ -282,13 +288,14 @@
         const region = C.region ? C.region(x, z) : 'vale';
         const dens = C.fbm(x * 0.00085 + 3.2, z * 0.00085 - 2.6, 3, 2.0, 0.5);
         const h = C.height(x, z);
-        if (h < 26 || h > 1450) continue;
+        if (h < 26 || h > 2500) continue;
         if (clearAt(x, z)) continue;
         const sl = C.slope(x, z);
         if (sl > 0.62) continue;
 
         const woodland = region === 'pine' ? 0.40 : region === 'mire' ? 0.57 : region === 'ember' || region === 'crown' ? 0.66 : 0.5;
-        if (dens > woodland && r1 > 0.12) {
+        const treeLine = region === 'vale' ? 1540 : region === 'crown' ? 980 : region === 'ember' ? 1120 : 1320;
+        if (h < treeLine && dens > woodland && r1 > 0.12) {
           const item = { x, y: h, z, s: 0.75 + r2 * 0.85, rot: r1 * 6.283, tint: r2, region: region };
           if (region === 'pine' || dens > 0.605 || h > 800) conifer.push(item);
           else broad.push(item);
@@ -298,7 +305,7 @@
 
         // the little things that make a meadow a meadow: flowers in the open,
         // low scrub at the wood's edge, a trunk that came down years ago
-        if (sl < 0.16 && dens > 0.34 && r1 > 0.52) {
+        if (region !== 'ember' && region !== 'crown' && sl < 0.16 && dens > 0.34 && r1 > 0.52) {
           blooms.push({ x, y: h, z, s: 0.7 + r2 * 0.9, rot: r1 * 6.283, tint: r2, region: region });
         }
         if (dens > 0.4 && dens < 0.56 && r2 > 0.62) {
@@ -436,16 +443,20 @@
 
     // ---- grass: knee-high tufts, everywhere the ground lies gentle ----
     const tufts = [];
-    const GSTEP = 46;
-    const gn = Math.max(1, Math.floor(size / GSTEP));
-    for (let i = 0; i < gn; i++) {
-      for (let j = 0; j < gn; j++) {
-        const r1 = C.hash2(seed + i * 53, j * 71 + 11);
-        const r2 = C.hash2(i * 41 + 3, seed + j * 59);
-        const x = minX + (i + r1) * GSTEP;
-        const z = minZ + (j + r2) * GSTEP;
+    const GSTEP = 58;
+    const gx0 = Math.floor(minX / GSTEP), gx1 = Math.ceil((minX + size) / GSTEP);
+    const gz0 = Math.floor(minZ / GSTEP), gz1 = Math.ceil((minZ + size) / GSTEP);
+    for (let gx = gx0; gx <= gx1; gx++) {
+      for (let gz = gz0; gz <= gz1; gz++) {
+        const r1 = C.hash2(gx * 53 + 173, gz * 71 + 11);
+        const r2 = C.hash2(gx * 41 + 3, gz * 59 + 967);
+        const x = (gx + 0.15 + r1 * 0.7) * GSTEP;
+        const z = (gz + 0.15 + r2 * 0.7) * GSTEP;
+        if (x < minX || x >= minX + size || z < minZ || z >= minZ + size) continue;
         const h = C.height(x, z);
-        if (h < 30 || h > 1200) continue;
+        const region = C.region ? C.region(x, z) : 'vale';
+        const grassLine = region === 'vale' ? 1320 : region === 'crown' ? 760 : region === 'ember' ? 720 : 980;
+        if (h < 30 || h > grassLine) continue;
         // Grass grows over the green but not through the roads or the houses.
         if (C.reach && C.reach.pathContains && C.reach.pathContains(x, z, 50)) continue;
         let onBuild = false;
@@ -458,9 +469,13 @@
         if (onBuild) continue;
         // grass only on ground that lies close to level
         if (Math.abs(C.height(x + 40, z) - h) > 26 || Math.abs(C.height(x, z + 40) - h) > 26) continue;
-        const dens = C.fbm(x * 0.0012 - 8.4, z * 0.0012 + 5.7, 3, 2.0, 0.5);
-        if (dens < 0.42 && r1 > 0.4) continue;
-        tufts.push({ x: x, y: h, z: z, s: 0.7 + r2 * 0.9, rot: r1 * 6.283, tint: r2 });
+        const patch = C.fbm(x * 0.0010 - 8.4, z * 0.0010 + 5.7, 3, 2.0, 0.5);
+        if (patch < (GRASS_THRESHOLDS[region] || 0.46)) continue;
+        const fine = C.fbm(x * 0.006 - 2.2, z * 0.006 + 6.4, 2, 2.0, 0.5);
+        const canopy = C.fbm(x * 0.00085 + 3.2, z * 0.00085 - 2.6, 3, 2.0, 0.5);
+        if (region === 'pine' && canopy > 0.58 && fine < 0.62) continue;
+        if (fine < 0.22 && r2 > 0.42) continue;
+        tufts.push({ x: x, y: h, z: z, s: 0.65 + r2 * 0.72, rot: r1 * 6.283, tint: r2, region: region });
       }
     }
     if (tufts.length) {
@@ -493,10 +508,11 @@
       tufts.forEach((it, k) => {
         q4.setFromAxisAngle(up, it.rot);
         v4.set(it.x - (minX + size / 2), it.y, it.z - (minZ + size / 2));
-        s4.set(34 * it.s, (28 + it.tint * 12) * it.s, 34 * it.s);
+        s4.set(25 * it.s, (22 + it.tint * 8) * it.s, 25 * it.s);
         m4.compose(v4, q4, s4);
         gmesh.setMatrixAt(k, m4);
-        c4.setHSL(0.235 + it.tint * 0.055, 0.30, 0.62 + it.tint * 0.30);
+        const palette = GRASS_PALETTES[it.region] || GRASS_PALETTES.vale;
+        c4.setHSL(palette[0] + it.tint * 0.035, palette[1], palette[2] + it.tint * 0.10);
         gmesh.setColorAt(k, c4);
       });
       gmesh.instanceMatrix.needsUpdate = true;

@@ -255,6 +255,14 @@
     r += (0.55 - r) * sand; g += (0.50 - g) * sand; b += (0.42 - b) * sand;
     const rock = c01((sl - 0.40) / 0.55);
     r += (0.34 - r) * rock; g += (0.32 - g) * rock; b += (0.31 - b) * rock;
+    const alpine = region(x, z) === 'crown' ? 820 : 1280;
+    const snowGrain = fbm(x * 0.0021 + 8.6, zz * 0.0021 - 4.2, 3, 2.0, 0.5);
+    const snowline = alpine + (snowGrain - 0.5) * 230;
+    const snow = c01((h - snowline) / 460) * (1 - c01((sl - 0.55) / 0.6) * 0.48);
+    const shade = fbm(x * 0.0037 - 2.1, zz * 0.0037 + 7.8, 2, 2.0, 0.5);
+    r += (0.84 + shade * 0.08 - r) * snow;
+    g += (0.88 + shade * 0.08 - g) * snow;
+    b += (0.91 + shade * 0.09 - b) * snow;
     return [r, g, b];
   }
 

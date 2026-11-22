@@ -1,5 +1,5 @@
 /* Crysto — the Hollow Reach: the camps.
-   Six fires in the wilds beyond the towns, each with its own tents, its own
+   The raider camps in the wilds beyond the towns, each with its own tents, its own
    banner and its own band. Nothing is spawned until the walker comes near, so
    the Reach costs nothing while they are elsewhere; and every monster raised
    here lives in the same list the vale's own do, so the guns and the fists hit
@@ -17,21 +17,95 @@
     { id: 'camp-pine', name: 'The Pine Stalkers', x: -18000, z: 35000, colour: 0x3a4a34, kinds: ['ravener', 'ravener', 'hellforged'] }
   ];
 
+  const WILD_CAMP_COUNT = 12;
+  const CAMP_NAMES = {
+    shore: ['Saltwatch', 'Greyhook', 'The Broken Oar', 'Windbreak'],
+    pine: ['Mossward', 'Blackbough', 'The Quiet Fang', 'Hollow Bark'],
+    ember: ['Ashen Knives', 'Redglass', 'Cinder Teeth', 'The Soot Banner'],
+    mire: ['Drowned Lantern', 'Reedshadow', 'The Sunk Road', 'Murkfall'],
+    crown: ['Pale Crown', 'The Split Cairn', 'White Scar', 'Old Bone']
+  };
+  const CAMP_FORCES = {
+    shore: ['ravener', 'hellforged', 'gorgon-x'],
+    pine: ['ravener', 'noctilith', 'hellforged'],
+    ember: ['elem-fire', 'hellforged', 'ravener'],
+    mire: ['noctilith', 'gorgon-x', 'ravener'],
+    crown: ['elem-quake', 'gorgon-x', 'noctilith']
+  };
+  const CAMP_COLOURS = {
+    shore: 0x92745b, pine: 0x52654b, ember: 0x9a4a22, mire: 0x536255, crown: 0x85858a
+  };
+
+  function addWildCamps() {
+    const candidates = [];
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const seed = row * 127 + col * 239 + 971;
+        candidates.push({
+          row: row,
+          col: col,
+          seed: seed,
+          priority: C.hash2(seed + 977, row * 83 + col * 191),
+          x: -20700 + col * 5200 + (C.hash2(seed, row + 41) - 0.5) * 1700,
+          z: 32100 + row * 2900 + (C.hash2(col + 83, seed) - 0.5) * 1200
+        });
+      }
+    }
+    candidates.sort((a, b) => a.priority - b.priority);
+
+    let made = 0;
+    for (let i = 0; i < candidates.length && made < WILD_CAMP_COUNT; i++) {
+      const candidate = candidates[i];
+      const x = candidate.x, z = candidate.z, seed = candidate.seed;
+      const row = candidate.row, col = candidate.col;
+      const region = C.region(x, z);
+      const y = C.height(x, z);
+      if (region === 'vale' || y < 90 || y > 1750 || C.slope(x, z) > 0.26) continue;
+      if (R.pathContains && R.pathContains(x, z, 760)) continue;
+
+      const occupied = R.camps.concat(R.broods || []).some((p) => Math.hypot(x - p.x, z - p.z) < 2450)
+        || (R.villages || []).some((v) => Math.hypot(x - v.x, z - v.z) < 2400)
+        || (R.people && R.people.NPCS || []).some((n) => Math.hypot(x - n.x, z - n.z) < 1500);
+      if (occupied) continue;
+      if ((C.keepClear || []).some((p) => Math.hypot(x - p.x, z - p.z) < p.r + 700)) continue;
+
+      const pool = CAMP_NAMES[region] || CAMP_NAMES.shore;
+      const force = CAMP_FORCES[region] || CAMP_FORCES.shore;
+      const name = pool[(C.hash2(seed, col + 113) * pool.length) | 0];
+      const kinds = [0, 1, 2].map((n) => force[(C.hash2(seed + n * 31, row + n * 53) * force.length) | 0]);
+      R.camps.push({
+        id: 'wild-' + row + '-' + col,
+        name: name,
+        x: x,
+        z: z,
+        region: region,
+        colour: CAMP_COLOURS[region] || CAMP_COLOURS.shore,
+        kinds: kinds,
+        wild: true
+      });
+      made++;
+    }
+  }
+
   R.buildCamps = function (scene) {
+    R.camps = R.camps.filter((c) => !c.wild);
+    addWildCamps();
     const P = R.props;
     R.camps.forEach((c, i) => {
       const g = new THREE.Group();
-      const n = 2 + (i % 2);
+      const n = c.wild ? 1 + (i % 3) : 2 + (i % 2);
       for (let k = 0; k < n; k++) {
-        const a = (k / n) * Math.PI * 2 + i;
-        g.add(P.tent(c.x + Math.cos(a) * 195, c.z + Math.sin(a) * 195, a + Math.PI, c.colour));
+        const a = (k / n) * Math.PI * 2 + i * 0.61;
+        const radius = c.wild ? 150 + (k % 2) * 75 : 195;
+        g.add(P.tent(c.x + Math.cos(a) * radius, c.z + Math.sin(a) * radius, a + Math.PI, c.colour));
       }
       const ban = P.banner(c.x + 95, c.z - 140, c.colour);
       g.add(ban.group);
-      const fire = C.build.flame(c.x, C.height(c.x, c.z) + 44, c.z, 0xff8a3a, 96);
+      const y = C.height(c.x, c.z);
+      const fire = C.build.flame(c.x, y + 44, c.z, 0xff8a3a, c.wild ? 76 : 96);
       g.add(fire.sprite);
       C.tickers.push(fire.tick);
-      const sm = C.build.smoke(c.x, C.height(c.x, c.z) + 70, c.z, 4);
+      const sm = C.build.smoke(c.x, y + 70, c.z, c.wild ? 3 : 4);
       sm.add(g);
       C.tickers.push(sm.tick);
       g.add(P.crate(c.x - 160, c.z + 95));
@@ -42,6 +116,7 @@
       c.fire = fire;
       c.flag = ban.cloth;
       c.broken = false;
+      c.discovered = false;
       c.spawned = false;
       c.members = [];
     });
@@ -85,7 +160,11 @@
       if (c.broken) return;
       if (!c.spawned) {
         const dx = player.x - c.x, dz = player.z - c.z;
-        if (dx * dx + dz * dz < 3000 * 3000) spawnCamp(c);
+        if (dx * dx + dz * dz < 3000 * 3000) {
+          c.discovered = true;
+          spawnCamp(c);
+          if (R.save) R.save();
+        }
         return;
       }
       // A death in the vale empties the shared list: the band goes back to the
@@ -100,5 +179,10 @@
   R.markBroken = function (id) {
     const c = R.camps.find((x) => x.id === id);
     if (c) breakCamp(c, false);
+  };
+
+  R.markDiscovered = function (id) {
+    const c = R.camps.find((x) => x.id === id);
+    if (c) c.discovered = true;
   };
 })();

@@ -9,9 +9,46 @@
   const SKIN = [0xe6bd93, 0xd9a877, 0xc08a5c, 0x9a6b44, 0x6f4a30, 0xf0cfae];
   const CLOTH = [0x3f6b58, 0x6b4a3a, 0x4a5a76, 0x7a5a3a, 0x556b4a, 0x8a4a4a, 0x5a4a6b];
   const HAIR = [0x2c211a, 0x4a3423, 0x6b4a2a, 0x8a6a44, 0x1e1a18, 0xa8865a];
+  const TEXTURES = {};
 
-  function mat(color, rough, metal) {
-    return new THREE.MeshStandardMaterial({ color: color, roughness: rough == null ? 0.85 : rough, metalness: metal || 0 });
+  function surface(kind) {
+    if (TEXTURES[kind]) return TEXTURES[kind];
+    const s = 128, canvas = document.createElement('canvas');
+    canvas.width = canvas.height = s;
+    const ctx = canvas.getContext('2d');
+    const img = ctx.createImageData(s, s);
+    for (let y = 0; y < s; y++) {
+      for (let x = 0; x < s; x++) {
+        const n = C.hash2(x * 374761 + 17, y * 668265 + 31);
+        const weave = kind === 'cloth'
+          ? Math.sin(x * 1.7) * 0.035 + Math.cos(y * 1.9) * 0.035
+          : kind === 'leather'
+            ? Math.sin((x + y * 0.18) * 0.48) * 0.045
+            : 0;
+        const grain = kind === 'skin' ? (n - 0.5) * 0.045 : (n - 0.5) * 0.16;
+        const v = Math.max(0, Math.min(255, (0.90 + grain + weave) * 255));
+        const i = (y * s + x) * 4;
+        img.data[i] = v;
+        img.data[i + 1] = v;
+        img.data[i + 2] = v;
+        img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);
+    if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
+    TEXTURES[kind] = tex;
+    return tex;
+  }
+
+  function mat(color, rough, metal, finish) {
+    const map = finish ? surface(finish) : null;
+    return new THREE.MeshStandardMaterial({
+      color: color, roughness: rough == null ? 0.85 : rough, metalness: metal || 0,
+      map: map, bumpMap: map, bumpScale: finish === 'skin' ? 0.012 : 0.035
+    });
   }
 
   // A limb segment: a cylinder with a ball at each end, so no edge is ever sharp.
@@ -39,11 +76,11 @@
   function make(o) {
     o = o || {};
     const H = o.height || 124;
-    const skin = mat(o.skin || pick(SKIN), 0.72);
-    const cloth = mat(o.cloth || pick(CLOTH), 0.93);
-    const trouser = mat(o.trouser || 0x3a3630, 0.95);
-    const hair = mat(o.hair || pick(HAIR), 0.95);
-    const leather = mat(0x4a3524, 0.9);
+    const skin = mat(o.skin || pick(SKIN), 0.72, 0, 'skin');
+    const cloth = mat(o.cloth || pick(CLOTH), 0.93, 0, 'cloth');
+    const trouser = mat(o.trouser || 0x3a3630, 0.95, 0, 'cloth');
+    const hair = mat(o.hair || pick(HAIR), 0.95, 0, 'hair');
+    const leather = mat(0x4a3524, 0.9, 0, 'leather');
 
     const root = new THREE.Group();
     const body = new THREE.Group();
@@ -62,10 +99,29 @@
     const chest = ball(H * 0.125, cloth, 1.12, 0.95, 0.86);
     chest.position.y = H * 0.09;
     torso.add(chest);
+    const tunic = new THREE.Mesh(
+      new THREE.LatheGeometry([
+        new THREE.Vector2(H * 0.105, -H * 0.12),
+        new THREE.Vector2(H * 0.13, -H * 0.08),
+        new THREE.Vector2(H * 0.15, H * 0.01),
+        new THREE.Vector2(H * 0.14, H * 0.09),
+        new THREE.Vector2(H * 0.10, H * 0.16)
+      ], 20),
+      cloth
+    );
+    tunic.position.y = H * 0.015;
+    torso.add(tunic);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(H * 0.063, H * 0.012, 8, 24), leather);
+    collar.rotation.x = Math.PI / 2;
+    collar.position.y = H * 0.158;
+    torso.add(collar);
     // a belt and a strap, so the body has a waist to read
-    const belt = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.108, H * 0.108, H * 0.032, 14), leather);
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.112, H * 0.112, H * 0.032, 18), leather);
     belt.position.y = -H * 0.085;
     torso.add(belt);
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(H * 0.045, H * 0.036, H * 0.014), mat(0x9b8052, 0.42, 0.45));
+    buckle.position.set(0, -H * 0.085, H * 0.108);
+    torso.add(buckle);
 
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.035, H * 0.042, H * 0.05, 10), skin);
     neck.position.y = H * 0.175;
@@ -85,9 +141,15 @@
     nose.position.set(0, -H * 0.012, H * 0.085);
     head.add(nose);
     for (const s of [-1, 1]) {
-      const eye = ball(H * 0.014, mat(0x2a2420, 0.5), 1, 1, 0.6);
+      const eye = ball(H * 0.018, mat(0xf0e7d8, 0.42), 1, 0.75, 0.42);
       eye.position.set(s * H * 0.034, H * 0.014, H * 0.078);
       head.add(eye);
+      const iris = ball(H * 0.007, mat(0x554331, 0.42), 1, 1, 0.45);
+      iris.position.set(s * H * 0.034, H * 0.014, H * 0.085);
+      head.add(iris);
+      const pupil = ball(H * 0.0038, mat(0x171513, 0.32), 1, 1, 0.5);
+      pupil.position.set(s * H * 0.034, H * 0.014, H * 0.088);
+      head.add(pupil);
       const brow = new THREE.Mesh(new THREE.BoxGeometry(H * 0.036, H * 0.008, H * 0.01), hair);
       brow.position.set(s * H * 0.034, H * 0.038, H * 0.08);
       brow.rotation.z = s * 0.12;
@@ -96,6 +158,9 @@
       ear.position.set(s * H * 0.086, -H * 0.004, 0);
       head.add(ear);
     }
+    const mouth = new THREE.Mesh(new THREE.BoxGeometry(H * 0.038, H * 0.006, H * 0.005), mat(0x754f43, 0.82));
+    mouth.position.set(0, -H * 0.056, H * 0.073);
+    head.add(mouth);
     // hair: a cap over the crown, longer at the back
     const cap = ball(H * 0.094, hair, 1, 0.95, 1);
     cap.position.y = H * 0.014;
@@ -125,6 +190,9 @@
       const upper = bone(H * 0.038, H * 0.115, cloth);
       upper.position.y = -H * 0.07;
       shoulder.add(upper);
+      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.036, H * 0.034, H * 0.022, 12), leather);
+      cuff.position.y = -H * 0.13;
+      shoulder.add(cuff);
       const elbow = new THREE.Group();
       elbow.position.y = -H * 0.135;
       shoulder.add(elbow);

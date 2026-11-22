@@ -455,7 +455,9 @@
     (C.places && C.places.shrines || []).forEach((s) => marker(s.x, s.z, s.name, 'shrine'));
     if (C.places && C.places.keep) marker(C.places.keep.x, C.places.keep.z, 'Sunken Keep', 'camp');
     (C.reach && C.reach.villages || []).forEach((v) => marker(v.x, v.z, v.name, 'village'));
-    (C.reach && C.reach.camps || []).forEach((c) => marker(c.x, c.z, c.name, 'camp'));
+    (C.reach && C.reach.camps || []).forEach((c) => {
+      marker(c.x, c.z, c.wild && !c.discovered ? '' : c.name, 'camp');
+    });
     (C.reach && C.reach.people && C.reach.people.NPCS || []).forEach((n) => {
       if (n.questGiver) marker(n.x, n.z, n.name, 'village');
     });

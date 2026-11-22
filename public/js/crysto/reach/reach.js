@@ -166,10 +166,15 @@
   /* ---- the Reach remembers its own -------------------------------------- */
   R.save = function () {
     const broken = {};
-    (R.camps || []).forEach((c) => { if (c.broken) broken[c.id] = true; });
+    const discovered = [];
+    (R.camps || []).forEach((c) => {
+      if (c.broken) broken[c.id] = true;
+      if (c.discovered) discovered.push(c.id);
+    });
     try {
       localStorage.setItem(KEY, JSON.stringify({
         broken: broken,
+        discovered: discovered,
         broods: (R.broods || []).filter((b) => b.cleared).map((b) => b.id),
         q: R.people.snapshot(), at: Date.now()
       }));
@@ -182,6 +187,7 @@
     if (!data) return;
     R.people.restore(data.q);
     Object.keys(data.broken || {}).forEach((id) => R.markBroken(id));
+    (data.discovered || []).forEach((id) => R.markDiscovered(id));
     (data.broods || []).forEach((id) => R.markBrood(id));
   };
 

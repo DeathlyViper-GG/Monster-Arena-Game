@@ -81,6 +81,34 @@
         halo.material.opacity = b.cleared ? 0.12 : 0.34 + 0.16 * Math.sin(t * 1.6 + b.z * 0.01);
       });
     });
+
+    const arena = new THREE.Group();
+    const ribs = new THREE.MeshStandardMaterial({ color: 0x77766f, roughness: 0.96, flatShading: true });
+    const frost = new THREE.MeshStandardMaterial({
+      color: 0xb9c7cd, roughness: 0.78, metalness: 0.04, emissive: 0x28353b, emissiveIntensity: 0.12
+    });
+    for (let i = 0; i < 16; i++) {
+      const a = i / 16 * Math.PI * 2;
+      const r = 780 + (i % 3) * 90;
+      const x = MATRIARCH.x + Math.cos(a) * r;
+      const z = MATRIARCH.z + Math.sin(a) * r;
+      const h = 190 + (i * 43 % 170);
+      const rib = new THREE.Mesh(new THREE.ConeGeometry(70 + (i % 2) * 22, h, 5), i % 4 === 0 ? frost : ribs);
+      rib.position.set(x, C.height(x, z) + h / 2, z);
+      rib.rotation.set(Math.sin(a) * 0.12, -a, Math.cos(a) * 0.16);
+      rib.castShadow = true;
+      arena.add(rib);
+    }
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(610, 630, 64),
+      new THREE.MeshBasicMaterial({ color: 0x9e8bb7, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(MATRIARCH.x, C.height(MATRIARCH.x, MATRIARCH.z) + 3, MATRIARCH.z);
+    arena.add(ring);
+    scene.add(arena);
+    if (C.keepClear) C.keepClear.push({ x: MATRIARCH.x, z: MATRIARCH.z, r: 700 });
+    R.matriarchArena = arena;
   };
 
   function spawnBrood(b) {
@@ -141,10 +169,11 @@
     const e = C.monsters.make(
       'void-seraph', MATRIARCH.x, MATRIARCH.z,
       { x: MATRIARCH.x, z: MATRIARCH.z },
-      { hp: 1500, big: 1.35 }
+      { boss: true, hp: 2600, big: 1.55 }
     );
     e.name = 'The Hollow Matriarch';
     e.matriarch = true;
+    e.attackActive = false;
     C.scene.add(e.mesh);
     list.push(e);
     matriarch = e;
@@ -154,6 +183,7 @@
   }
 
   R.matriarchDown = function () {
+    if (matriarch && matriarch.attackActive && !(C.bossroom && C.bossroom.active())) C.bossattacks.clear();
     matriarch = null;
     if (C.hud && C.hud.setBoss) C.hud.setBoss(null);
     const Q = R.people && R.people.state;
@@ -186,17 +216,37 @@
     const Q = R.people && R.people.state;
     const hunting = !!(Q && Q.active === 'matriarch' && !Q.done.matriarch);
     if (!hunting) {
-      if (matriarch && C.hud && C.hud.setBoss) C.hud.setBoss(null);
+      if (matriarch && matriarch.attackActive && !(C.bossroom && C.bossroom.active())) {
+        C.bossattacks.clear();
+        matriarch.attackActive = false;
+      }
+      if (matriarch && C.hud && C.hud.setBoss && !(C.bossroom && C.bossroom.active())) C.hud.setBoss(null);
       return;
     }
+    const targetX = matriarch ? matriarch.pos.x : MATRIARCH.x;
+    const targetZ = matriarch ? matriarch.pos.z : MATRIARCH.z;
+    const close = Math.hypot(player.x - targetX, player.z - targetZ) < 2800;
     if (!matriarch || list.indexOf(matriarch) < 0) {
       matriarch = null;
-      spawnMatriarch();
+      if (close) spawnMatriarch();
       return;
     }
-    const dx = player.x - matriarch.pos.x, dz = player.z - matriarch.pos.z;
-    if (dx * dx + dz * dz < 2800 * 2800 && C.hud && C.hud.setBoss) {
-      C.hud.setBoss('The Hollow Matriarch', matriarch.hp / matriarch.maxHp, '');
+    const sanctumActive = !!(C.bossroom && C.bossroom.active());
+    if (close && !sanctumActive) {
+      if (!matriarch.attackActive) {
+        C.bossattacks.start('matriarch', matriarch, MATRIARCH);
+        matriarch.attackActive = true;
+      }
+      C.bossattacks.update(dt);
+      if (C.hud && C.hud.setBoss) {
+        C.hud.setBoss('The Hollow Matriarch', matriarch.hp / matriarch.maxHp, C.bossattacks.move());
+      }
+    } else if (matriarch.attackActive) {
+      if (!sanctumActive) {
+        C.bossattacks.clear();
+        if (C.hud && C.hud.setBoss) C.hud.setBoss(null);
+      }
+      matriarch.attackActive = false;
     }
   };
 })();

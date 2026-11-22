@@ -178,7 +178,18 @@
       // sights slow the walk by the gun's own profile
       const sight = C.weapons && C.weapons.moveMul ? C.weapons.moveMul() : 1;
       const speed = (dashT > 0 ? DASH_SPEED : WALK) * wading * (C.slowFactor || 1) * sight;
-      const to = slide(P.x + mx * speed * dt, P.z + mz * speed * dt);
+      let to = slide(P.x + mx * speed * dt, P.z + mz * speed * dt);
+      const run = Math.hypot(to.x - P.x, to.z - P.z);
+      if (run > 0.01) {
+        const grade = (groundAt(to.x, to.z) - groundAt(P.x, P.z)) / run;
+        if (grade > 0.68) {
+          const traction = grade > 1.05 ? 0.22 : Math.max(0.42, 1 - (grade - 0.2) * 0.72);
+          to = slide(P.x + mx * speed * dt * traction, P.z + mz * speed * dt * traction);
+        } else if (grade < -0.45 && dashT <= 0) {
+          const downhill = Math.min(1.18, 1 + (-grade - 0.45) * 0.18);
+          to = slide(P.x + mx * speed * dt * downhill, P.z + mz * speed * dt * downhill);
+        }
+      }
       P.moved += Math.hypot(to.x - P.x, to.z - P.z);
       P.x = to.x;
       P.z = to.z;

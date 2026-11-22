@@ -595,6 +595,63 @@
     return list;
   }
 
+  /* ---- The Hollow Matriarch: a roaming, two-phase Reach boss ------------ */
+  function matriarchCycle() {
+    const b = boss();
+    const list = [
+      { name: 'Veil Sweep', dur: 1.55, enter: function () {
+        const a = aimAt();
+        zone({
+          shape: 'sector', x: b.pos.x, z: b.pos.z, r: 620, a: a.a, half: 0.72,
+          warn: 0.9, dmg: 28, colour: 0xc9a8ff, opacity: 0.32, onHit: crescent
+        });
+      } },
+      { name: 'Riftfall', dur: 1.8, enter: function () {
+        const p = P();
+        for (let i = 0; i < 4; i++) {
+          const a = (i / 4) * TAU + 0.4;
+          const x = p.x + Math.cos(a) * (90 + i * 24);
+          const z = p.z + Math.sin(a) * (90 + i * 24);
+          zone({ x: x, z: z, r: 145, warn: 0.92, dmg: 22, colour: 0xb99aff, opacity: 0.3 });
+        }
+      } },
+      { name: 'Soul Seekers', dur: 1.7, enter: function () {
+        this.fired = 0;
+        this.at = 0.25;
+      }, tick: function (dt) {
+        this.at -= dt;
+        if (this.fired >= 2 || this.at > 0) return;
+        this.fired++;
+        this.at = 0.48;
+        const a = aimAt();
+        if (C.monsters && C.monsters.launch) {
+          C.monsters.launch({
+            kind: 'soul', x: b.pos.x, y: b.y + b.height * 0.55, z: b.pos.z,
+            r: 22, dmg: 16, life: 4.8, vx: a.x * 310, vz: a.z * 310, homing: true
+          });
+        }
+      } },
+      { name: 'Crown Pulse', dur: 2.0, enter: function () {
+        wave(room.site.x, room.site.z, 0xc9a8ff, 20, 650, 930);
+      } },
+      { name: '', dur: 0.45 }
+    ];
+    if (b.hp / b.maxHp < 0.5) {
+      list.splice(1, 0, { name: 'Shattered Crown', dur: 2.0, enter: function () {
+        for (let i = 0; i < 7; i++) {
+          const a = (i / 7) * TAU + rnd(-0.2, 0.2);
+          const r = 220 + (i % 3) * 105;
+          zone({
+            x: room.site.x + Math.cos(a) * r,
+            z: room.site.z + Math.sin(a) * r,
+            r: 132, warn: 0.85, dmg: 19, colour: 0xe0d5ff, opacity: 0.3
+          });
+        }
+      } });
+    }
+    return list;
+  }
+
   /* --------------------------------------------------------------- frame */
   function update(dt) {
     if (!room) return;
@@ -622,7 +679,7 @@
       const s = room.site;
       const dx = b.pos.x - s.x, dz = b.pos.z - s.z;
       const d = Math.hypot(dx, dz);
-      const lim = 560 * 0.76;
+      const lim = room.id === 'matriarch' ? 760 : 560 * 0.76;
       if (d > lim) { b.pos.x = s.x + (dx / d) * lim; b.pos.z = s.z + (dz / d) * lim; }
     }
 
@@ -657,7 +714,7 @@
     if (!b) return;
     room = {
       id: id, boss: b, site: site,
-      cycle: id === 'root' ? rootCycle : id === 'ember' ? emberCycle : tideCycle
+      cycle: id === 'root' ? rootCycle : id === 'ember' ? emberCycle : id === 'matriarch' ? matriarchCycle : tideCycle
     };
     // the guardian's own pattern replaces the generic elemental attack
     b.el = null;
@@ -666,6 +723,7 @@
     b.keep = id === 'root' ? 140 : 430;
     if (id === 'ember') b.speed = 200;
     if (id === 'tide') b.speed = 130;
+    if (id === 'matriarch') { b.speed = 170; b.keep = 340; }
     play(room.cycle());
   }
 

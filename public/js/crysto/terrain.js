@@ -6,6 +6,7 @@
 (function () {
   const C = (window.Crysto = window.Crysto || {});
   const CHUNK = 2000, SEG = 54, RING = 2, CELLS = RING * 2 + 1;
+  let SURFACES = null;
 
   // The sun the sky shader draws and the light that casts the shadows are the
   // same sun: one direction, shared. It sits low over the vale — a long, late
@@ -13,10 +14,8 @@
   // it is holding its breath.
   const SUN_DIR = new THREE.Vector3(0.50, 0.30, 0.64).normalize();
 
-  // The field's own detail: mottled ground, then thousands of blades catching
-  // the sun one way and casting into shadow the other, clumps of darker growth
-  // and the odd stone. Kept close to neutral so the biome's vertex colour still
-  // decides what grows here.
+  // Fine, neutral ground grain; the region-specific surface atlas adds the
+  // soil, rock, ash and snow character without repeating large color patches.
   function detailTexture() {
     const s = 256, cv = document.createElement('canvas');
     cv.width = cv.height = s;
@@ -24,48 +23,74 @@
     const img = ctx.createImageData(s, s);
     for (let y = 0; y < s; y++) {
       for (let x = 0; x < s; x++) {
-        const n = C.vnoise(x * 0.05, y * 0.05) * 0.5 + C.vnoise(x * 0.17, y * 0.17) * 0.3 + C.vnoise(x * 0.62, y * 0.62) * 0.2;
-        const v = 174 + n * 68;
+        const n = C.fbm(x * 0.036, y * 0.036, 4, 2.0, 0.5);
+        const grain = C.vnoise(x * 0.37 + 11.4, y * 0.37 - 6.2);
+        const v = 164 + n * 78 + grain * 22;
         const i = (y * s + x) * 4;
         img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
         img.data[i + 3] = 255;
       }
     }
     ctx.putImageData(img, 0, 0);
-
-    for (let i = 0; i < 3600; i++) {
-      const x = Math.random() * s, y = Math.random() * s;
-      const len = 3 + Math.random() * 11;
-      const lean = (Math.random() - 0.5) * 6;
-      const light = Math.random();
-      ctx.strokeStyle = light > 0.55
-        ? 'rgba(255,255,232,' + (0.09 + light * 0.24) + ')'
-        : 'rgba(22,32,14,' + (0.09 + (1 - light) * 0.24) + ')';
-      ctx.lineWidth = 0.7 + Math.random() * 1.2;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.quadraticCurveTo(x + lean * 0.5, y - len * 0.6, x + lean, y - len);
-      ctx.stroke();
-    }
-    for (let i = 0; i < 110; i++) {
-      const x = Math.random() * s, y = Math.random() * s, r = 3 + Math.random() * 11;
-      const g2 = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g2.addColorStop(0, 'rgba(30,44,20,0.20)');
-      g2.addColorStop(1, 'rgba(30,44,20,0)');
-      ctx.fillStyle = g2;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-    }
-    for (let i = 0; i < 90; i++) {
-      const x = Math.random() * s, y = Math.random() * s, r = 0.8 + Math.random() * 2.2;
-      ctx.fillStyle = 'rgba(212,206,190,' + (0.18 + Math.random() * 0.26) + ')';
-      ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(40,40,30,0.22)';
-      ctx.beginPath(); ctx.arc(x + 0.8, y + 1, r * 0.8, 0, 7); ctx.fill();
-    }
     const tex = new THREE.CanvasTexture(cv);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(88, 88);
     tex.anisotropy = 8;
+    return tex;
+  }
+
+  function surfaceTexture(kind) {
+    const s = 192, cv = document.createElement('canvas');
+    cv.width = cv.height = s;
+    const ctx = cv.getContext('2d');
+    const img = ctx.createImageData(s, s);
+    const palettes = {
+      meadow: [0.91, 0.94, 0.81],
+      ash: [0.88, 0.86, 0.82],
+      pine: [0.78, 0.86, 0.73],
+      ember: [0.94, 0.81, 0.69],
+      mire: [0.75, 0.84, 0.76],
+      crown: [0.91, 0.90, 0.86],
+      rock: [0.92, 0.91, 0.88],
+      snow: [0.98, 1.00, 1.04],
+      sand: [1.02, 0.94, 0.78]
+    };
+    const base = palettes[kind];
+    for (let y = 0; y < s; y++) {
+      for (let x = 0; x < s; x++) {
+        const u = x / s * Math.PI * 2, v = y / s * Math.PI * 2;
+        const broad = 0.5 + 0.25 * Math.sin(u + Math.sin(v) * 1.7) + 0.25 * Math.cos(v - Math.sin(u) * 1.4);
+        const grain = 0.5 + 0.25 * Math.sin(u * 13 + Math.cos(v * 7)) + 0.25 * Math.cos(v * 17 - Math.sin(u * 11));
+        const line = kind === 'rock'
+          ? Math.sin(v * 9 + (broad - 0.5) * 5) * 0.055
+          : kind === 'snow'
+            ? Math.sin(u * 8 + v * 3 + (broad - 0.5) * 3) * 0.028
+            : kind === 'sand'
+              ? Math.sin(v * 18 + (broad - 0.5) * 4) * 0.045
+              : 0;
+        const fleck = (grain - 0.5) * 0.20 + (broad - 0.5) * 0.18 + line;
+        const i = (y * s + x) * 4;
+        img.data[i] = Math.max(0, Math.min(255, (base[0] + fleck) * 255));
+        img.data[i + 1] = Math.max(0, Math.min(255, (base[1] + fleck) * 255));
+        img.data[i + 2] = Math.max(0, Math.min(255, (base[2] + fleck) * 255));
+        img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return cv;
+  }
+
+  function surfaceAtlas() {
+    const tile = 192, cv = document.createElement('canvas');
+    cv.width = cv.height = tile * 3;
+    const ctx = cv.getContext('2d');
+    ['meadow', 'ash', 'pine', 'ember', 'mire', 'crown', 'rock', 'snow', 'sand'].forEach((kind, i) => {
+      ctx.drawImage(surfaceTexture(kind), (i % 3) * tile, Math.floor(i / 3) * tile);
+    });
+    const tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
+    if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
     return tex;
   }
 
@@ -309,6 +334,7 @@
     const geo = new THREE.PlaneGeometry(CHUNK, CHUNK, SEG, SEG);
     const detail = detailTexture();
     const macro = macroTexture();
+    if (!SURFACES) SURFACES = surfaceAtlas();
     // The relief gets its own copy of the same grain at a coarser tiling, so the
     // sun actually breaks over the ground instead of sliding across paint.
     const relief = detail.clone();
@@ -323,7 +349,25 @@
     // gives each hillside its own colour.
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uMacro = { value: macro };
+      shader.uniforms.uSurfaceAtlas = { value: SURFACES };
+      shader.vertexShader = [
+        'varying vec3 vCrystoWorldPosition;',
+        'varying float vCrystoNormalY;',
+        shader.vertexShader
+      ].join('\n');
       shader.fragmentShader = 'uniform sampler2D uMacro;\n' + shader.fragmentShader.replace(
+        'void main() {',
+        [
+          'uniform sampler2D uSurfaceAtlas;',
+          'varying vec3 vCrystoWorldPosition;',
+          'varying float vCrystoNormalY;',
+          'vec2 crystoSurfaceUv(vec2 uv, float cell) {',
+          '  vec2 localUv = fract(uv) * 0.94 + 0.03;',
+          '  return (vec2(mod(cell, 3.0), floor(cell / 3.0)) + localUv) / 3.0;',
+          '}',
+          'void main() {'
+        ].join('\n')
+      ).replace(
         '#include <map_fragment>',
         [
           '#ifdef USE_MAP',
@@ -332,11 +376,44 @@
           '  vec4 texelFine = texture2D( map, vUv * 4.6 );',
           '  texelColor.rgb *= mix( vec3( 1.0 ), texelMid.rgb, 0.5 );',
           '  texelColor.rgb *= mix( vec3( 1.0 ), texelFine.rgb, 0.22 );',
+          '  vec2 worldUv = vCrystoWorldPosition.xz * 0.0042;',
+          '  float onReach = smoothstep( 25200.0, 26500.0, vCrystoWorldPosition.z );',
+          '  float pine = clamp( (-vCrystoWorldPosition.x - 2500.0) / 8500.0, 0.0, 1.0 ) * clamp( (vCrystoWorldPosition.z - 30000.0) / 6000.0, 0.0, 1.0 );',
+          '  float ember = clamp( (vCrystoWorldPosition.x - 1800.0) / 9000.0, 0.0, 1.0 ) * onReach;',
+          '  float mire = 1.0 - smoothstep( 0.60, 1.32, length( vec2( (vCrystoWorldPosition.x + 12000.0) / 10000.0, (vCrystoWorldPosition.z - 48000.0) / 9000.0 ) ) );',
+          '  float crown = 1.0 - smoothstep( 0.72, 1.25, length( vec2( vCrystoWorldPosition.x / 7500.0, (vCrystoWorldPosition.z - 52000.0) / 7000.0 ) ) );',
+          '  float cell = onReach < 0.5 ? 0.0 : 1.0;',
+          '  if (pine > 0.55) cell = 2.0;',
+          '  if (ember > 0.55) cell = 3.0;',
+          '  if (mire > 0.55) cell = 4.0;',
+          '  if (crown > 0.55) cell = 5.0;',
+          '  vec3 surface = texture2D( uSurfaceAtlas, crystoSurfaceUv( worldUv, cell ) ).rgb;',
+          '  float rock = clamp( (0.82 - vCrystoNormalY) * 1.25, 0.0, 0.82 );',
+          '  vec3 rockMap = texture2D( uSurfaceAtlas, crystoSurfaceUv( worldUv, 6.0 ) ).rgb;',
+          '  surface = mix( surface, rockMap, rock );',
+          '  float snowLine = mix( 1460.0, mix( 1280.0, 820.0, crown ), onReach );',
           '  vec3 macroTint = texture2D( uMacro, vUv * 0.06 ).rgb * 1.34;',
-          '  texelColor.rgb *= mix( vec3( 1.0 ), macroTint, 0.85 );',
+          '  float snow = smoothstep( snowLine - 120.0, snowLine + 380.0, vCrystoWorldPosition.y + (macroTint.r - 0.5) * 240.0 );',
+          '  snow *= 1.0 - clamp( (0.55 - vCrystoNormalY) * 0.42, 0.0, 0.34 );',
+          '  vec3 snowMap = texture2D( uSurfaceAtlas, crystoSurfaceUv( worldUv, 7.0 ) ).rgb;',
+          '  surface = mix( surface, snowMap, snow );',
+          '  float sand = 1.0 - smoothstep( 0.0, 38.0, vCrystoWorldPosition.y );',
+          '  vec3 sandMap = texture2D( uSurfaceAtlas, crystoSurfaceUv( worldUv, 8.0 ) ).rgb;',
+          '  surface = mix( surface, sandMap, sand * (1.0 - onReach * mire) );',
+          '  texelColor.rgb *= mix( vec3( 1.0 ), macroTint, 0.42 );',
+          '  texelColor.rgb *= mix( vec3( 1.0 ), surface, 0.72 );',
           '  texelColor = mapTexelToLinear( texelColor );',
           '  diffuseColor *= texelColor;',
           '#endif'
+        ].join('\n')
+      );
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        [
+          '#include <begin_vertex>',
+          'vec4 crystoWorld = modelMatrix * vec4( transformed, 1.0 );',
+          'vCrystoWorldPosition = crystoWorld.xyz;',
+          'vCrystoNormalY = abs( normalize( mat3( modelMatrix ) * objectNormal ).y );'
         ].join('\n')
       );
     };

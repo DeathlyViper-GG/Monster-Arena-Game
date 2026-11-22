@@ -471,16 +471,22 @@
     }
 
     function setMood(which) {
-      const reach = which === 'reach';
+      const moods = {
+        vale: { zenith: 0x1b3557, mid: 0x5d8398, horizon: 0xb9c3bd, sun: 0xffd9a4, mist: 0xd8e4e6, cloud: 0xffffff },
+        shore: { zenith: 0x2a1814, mid: 0x7a5344, horizon: 0xc9a48e, sun: 0xffb089, mist: 0xc4a898, cloud: 0xe7d2c4 },
+        pine: { zenith: 0x15251d, mid: 0x526653, horizon: 0xa2ad91, sun: 0xd8d5a5, mist: 0xaebda6, cloud: 0xe0e8d8 },
+        ember: { zenith: 0x321613, mid: 0x94513a, horizon: 0xd59a72, sun: 0xffa05d, mist: 0xb88368, cloud: 0xf0c6a9 },
+        mire: { zenith: 0x1e1a2a, mid: 0x5c5369, horizon: 0xa79a9b, sun: 0xd8b9b0, mist: 0xaaa0b1, cloud: 0xd8d2dc },
+        crown: { zenith: 0x272934, mid: 0x747c87, horizon: 0xc4c5bf, sun: 0xffe1b5, mist: 0xc9cbd0, cloud: 0xf2eee4 }
+      };
+      const mood = moods[which] || moods.vale;
       const u = sky.material.uniforms;
-      u.uZenith.value.setHex(reach ? 0x2a1814 : 0x1b3557);
-      u.uMid.value.setHex(reach ? 0x7a5344 : 0x5d8398);
-      u.uHorizon.value.setHex(reach ? 0xc9a48e : 0xb9c3bd);
-      u.uSun.value.setHex(reach ? 0xffb089 : 0xffd9a4);
-      const mistC = reach ? 0xc4a898 : 0xd8e4e6;
-      const cloudC = reach ? 0xe7d2c4 : 0xffffff;
-      for (let i = 0; i < mist.children.length; i++) mist.children[i].material.color.setHex(mistC);
-      for (let i = 0; i < clouds.children.length; i++) clouds.children[i].material.color.setHex(cloudC);
+      u.uZenith.value.setHex(mood.zenith);
+      u.uMid.value.setHex(mood.mid);
+      u.uHorizon.value.setHex(mood.horizon);
+      u.uSun.value.setHex(mood.sun);
+      for (let i = 0; i < mist.children.length; i++) mist.children[i].material.color.setHex(mood.mist);
+      for (let i = 0; i < clouds.children.length; i++) clouds.children[i].material.color.setHex(mood.cloud);
     }
 
     return {

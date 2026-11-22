@@ -278,6 +278,7 @@
         const x = minX + (i + 0.15 + r1 * 0.7) * STEP;
         const z = minZ + (j + 0.15 + r2 * 0.7) * STEP;
 
+        const region = C.region ? C.region(x, z) : 'vale';
         const dens = C.fbm(x * 0.00085 + 3.2, z * 0.00085 - 2.6, 3, 2.0, 0.5);
         const h = C.height(x, z);
         if (h < 26 || h > 1450) continue;
@@ -285,31 +286,32 @@
         const sl = C.slope(x, z);
         if (sl > 0.62) continue;
 
-        if (dens > 0.5 && r1 > 0.12) {
-          const item = { x, y: h, z, s: 0.75 + r2 * 0.85, rot: r1 * 6.283, tint: r2 };
-          if (dens > 0.605 || h > 800) conifer.push(item);
+        const woodland = region === 'pine' ? 0.40 : region === 'mire' ? 0.57 : region === 'ember' || region === 'crown' ? 0.66 : 0.5;
+        if (dens > woodland && r1 > 0.12) {
+          const item = { x, y: h, z, s: 0.75 + r2 * 0.85, rot: r1 * 6.283, tint: r2, region: region };
+          if (region === 'pine' || dens > 0.605 || h > 800) conifer.push(item);
           else broad.push(item);
         } else if (sl > 0.34 || r1 > 0.86) {
-          rocks.push({ x, y: h, z, s: 0.7 + r2 * 1.9, rot: r1 * 6.283, tint: r2 });
+          rocks.push({ x, y: h, z, s: 0.7 + r2 * 1.9, rot: r1 * 6.283, tint: r2, region: region });
         }
 
         // the little things that make a meadow a meadow: flowers in the open,
         // low scrub at the wood's edge, a trunk that came down years ago
         if (sl < 0.16 && dens > 0.34 && r1 > 0.52) {
-          blooms.push({ x, y: h, z, s: 0.7 + r2 * 0.9, rot: r1 * 6.283, tint: r2 });
+          blooms.push({ x, y: h, z, s: 0.7 + r2 * 0.9, rot: r1 * 6.283, tint: r2, region: region });
         }
         if (dens > 0.4 && dens < 0.56 && r2 > 0.62) {
           bushes.push({ x, y: h, z, s: 0.55 + r1 * 0.7, rot: r2 * 6.283, tint: r1 });
         }
-        if (dens > 0.55 && r2 > 0.86) {
-          logs.push({ x, y: h, z, s: 0.7 + r1 * 0.7, rot: r2 * 6.283, tint: r1 });
+        if ((dens > 0.55 || region === 'ember' || region === 'mire') && r2 > 0.86) {
+          logs.push({ x, y: h, z, s: 0.7 + r1 * 0.7, rot: r2 * 6.283, tint: r1, region: region });
         }
         if (sl > 0.2 && sl < 0.5 && r1 > 0.82) {
-          dead.push({ x, y: h, z, s: 0.6 + r2 * 0.7, rot: r1 * 6.283, tint: r2 });
+          dead.push({ x, y: h, z, s: 0.6 + r2 * 0.7, rot: r1 * 6.283, tint: r2, region: region });
         }
         // crags: the bone of the hillside breaking through on the steep ground
         if (sl > 0.42 && r2 > 0.55) {
-          crags.push({ x, y: h, z, s: 1.6 + r1 * 4.2, rot: r2 * 6.283, tint: r1 });
+          crags.push({ x, y: h, z, s: 1.6 + r1 * 4.2, rot: r2 * 6.283, tint: r1, region: region });
         }
       }
     }
@@ -353,7 +355,13 @@
 
     // Trunks for both kinds
     const all = conifer.concat(broad);
-    const trunks = instanced(trunkGeo(), trunkMat, all, (it) => (it.tint > 0.5 ? 0xd8c8ae : 0xb0a08c), 1, true);
+    const trunks = instanced(trunkGeo(), trunkMat, all, (it) => {
+      if (it.region === 'pine') return it.tint > 0.5 ? 0x665a4d : 0x453f39;
+      if (it.region === 'ember') return it.tint > 0.5 ? 0x95745b : 0x58453a;
+      if (it.region === 'mire') return it.tint > 0.5 ? 0x6d7060 : 0x41483e;
+      if (it.region === 'crown') return 0xaaa697;
+      return it.tint > 0.5 ? 0xd8c8ae : 0xb0a08c;
+    }, 1, true);
     if (trunks) g.add(trunks);
 
     // Conifers: three tiers of needles stacked up the trunk
@@ -366,6 +374,11 @@
     });
     const con = instanced(mergeGeos([t1, t2, t3]), coneMat, conifer, (it) => {
       const t = it.tint;
+      if (it.region === 'pine') return t > 0.5 ? 0x718365 : 0x405244;
+      if (it.region === 'ember') return t > 0.5 ? 0xa87855 : 0x684638;
+      if (it.region === 'mire') return t > 0.5 ? 0x748879 : 0x485d58;
+      if (it.region === 'crown') return t > 0.5 ? 0xb5b6ad : 0x8c9295;
+      if (it.region === 'shore') return t > 0.5 ? 0xa9a08c : 0x6f7866;
       return t > 0.62 ? 0xdfeedd : t > 0.3 ? 0xffffff : 0xc4d4c0;
     }, 1, true);
     if (con) g.add(con);

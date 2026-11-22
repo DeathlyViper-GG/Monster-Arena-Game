@@ -3,11 +3,11 @@ import { createShrineOne, createShrineTwo, createShrineThree } from "./ShrineFil
 import { createKeepOne, createKeepTwo, createKeepThree } from "./KeepFilm";
 import { createDawnOne, createDawnTwo, createDawnThree } from "./DawnFilm";
 import { createCryoOne, createCryoTwo, createCryoThree } from "./CryoFilm";
+import { guardianScenes } from "./GuardianFilm";
 
-/* The four films Crysto tells: the arrival, the waking of the shrines, the
-   Hollow Knight and the dawn it was all for. Each is three beats of real
-   three.js sets, played through the same cinematic shell as the realm
-   intros and the Age of the Sentinel. */
+/* Crysto's films follow the arrival, the shrine and Keep stories, four
+   guardian confrontations and the dawn. Each is a sequence of real three.js
+   sets, played through the same cinematic shell as the other realm intros. */
 const FILMS = {
   cryo: {
     scenes: [
@@ -100,6 +100,54 @@ const FILMS = {
     tint: 0x9a6ad8,
     accent: "#ecd9ff",
     endHint: "raise your blade",
+  },
+
+  "guardian-root": {
+    scenes: [
+      { numeral: "I", who: "THE OLD FOREST", caption: "Before Drane Vale had a name, the first spring rose beneath a forest of stone." },
+      { numeral: "II", who: "THE ROOTBOUND COLOSSUS", caption: "The Colossus was sworn to keep that water living. The dark has made its oath a prison." },
+      { numeral: "III", who: "THE ROOT SANCTUM", caption: "Its fists can split the floor. Find the rhythm between each blow, and give the spring back its keeper." },
+    ],
+    builders: guardianScenes("root"),
+    tint: 0x9dffc0,
+    accent: "#e2ffe9",
+    endHint: "face the Colossus",
+  },
+
+  "guardian-ember": {
+    scenes: [
+      { numeral: "I", who: "THE EMBER SHRINE", caption: "This shrine once fed every hearth from a single living flame." },
+      { numeral: "II", who: "THE CINDER SOVEREIGN", caption: "The Sovereign has kept that fire, and all its weapons, for itself." },
+      { numeral: "III", who: "THE EMBER SANCTUM", caption: "Read the flash before the shot. When the Sovereign reloads, that is your opening." },
+    ],
+    builders: guardianScenes("ember"),
+    tint: 0xff9a5c,
+    accent: "#fff0df",
+    endHint: "face the Sovereign",
+  },
+
+  "guardian-tide": {
+    scenes: [
+      { numeral: "I", who: "THE RIVER SABLE", caption: "Tide was carved to remember the river before it froze." },
+      { numeral: "II", who: "THE RIME WARDEN", caption: "The Warden has turned that memory into mines, tar and a coat of iron." },
+      { numeral: "III", who: "THE TIDE SANCTUM", caption: "Keep moving. Let the ward fade, then strike while the ice is open." },
+    ],
+    builders: guardianScenes("tide"),
+    tint: 0x6fd0ff,
+    accent: "#e8f6ff",
+    endHint: "face the Warden",
+  },
+
+  matriarch: {
+    scenes: [
+      { numeral: "I", who: "THE FIVE BROODS", caption: "The broods were never an invading army. They were her heartbeats, scattered across the Reach." },
+      { numeral: "II", who: "THE HOLLOW MATRIARCH", caption: "With every nest broken, she has lost another piece of her long sleep." },
+      { numeral: "III", who: "THE BONE CROWN", caption: "The mother of the broods waits alone. The Reach's last silence is yours to answer." },
+    ],
+    builders: guardianScenes("matriarch"),
+    tint: 0xc9a6ff,
+    accent: "#f0e5ff",
+    endHint: "face the Matriarch",
   },
 
   dawn: {

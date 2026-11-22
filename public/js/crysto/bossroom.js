@@ -163,6 +163,9 @@
       C.scene.add(e.mesh);
       // its own fighting pattern, not the generic elemental shot
       if (C.bossattacks) C.bossattacks.start(id, e, site);
+      if (C.playFilm) {
+        C.playFilm('guardian-' + id, () => C.hud.banner(def.bossName, 'The fight begins'));
+      }
       if (C.save) C.save.auto();
       return true;
     },

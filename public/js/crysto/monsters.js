@@ -19,17 +19,17 @@
 
   // hp / speed / contact damage / how far it will fire / cooldown between shots
   const KINDS = {
-    ravener:       { sprite: 'ravener.png',        hp: 90,  speed: 240, dmg: 10, range: 0,   cd: 0,   el: null,     scale: 1.00, name: 'Ravener' },
-    hellforged:    { sprite: 'hellforged.png',     hp: 150, speed: 150, dmg: 14, range: 640, cd: 2.6, el: 'fire',   scale: 1.10, name: 'Hellforged' },
-    'gorgon-x':    { sprite: 'gorgon-x.png',       hp: 120, speed: 175, dmg: 13, range: 700, cd: 2.1, el: 'bolt',   scale: 1.05, name: 'Gorgon' },
-    noctilith:     { sprite: 'noctilith.png',      hp: 140, speed: 145, dmg: 15, range: 680, cd: 2.8, el: 'shadow', scale: 1.10, name: 'Noctilith' },
-    'bone-warden': { sprite: 'bone-warden.png',    hp: 240, speed: 125, dmg: 20, range: 520, cd: 3.2, el: 'shadow', scale: 1.18, name: 'Bone Warden' },
-    'elem-fire':   { sprite: 'elem-fire.png',      hp: 140, speed: 170, dmg: 16, range: 620, cd: 2.3, el: 'fire',   scale: 1.08, name: 'Magma Lurker' },
-    'elem-storm':  { sprite: 'elem-storm.png',     hp: 140, speed: 160, dmg: 12, range: 720, cd: 2.1, el: 'storm',  scale: 1.08, name: 'Storm Caller' },
-    'elem-rime':   { sprite: 'elem-rime.png',      hp: 140, speed: 115, dmg: 12, range: 820, cd: 2.6, el: 'rime',   scale: 1.10, name: 'Rime Warden' },
-    'elem-quake':  { sprite: 'elem-quake.png',     hp: 140, speed: 100, dmg: 18, range: 420, cd: 3.4, el: 'quake',  scale: 1.08, name: 'Quake Strider' },
-    'elem-soul':   { sprite: 'elem-soul.png',      hp: 140, speed: 150, dmg: 13, range: 620, cd: 3.2, el: 'soul',   scale: 1.08, name: 'Soul Mote' },
-    'void-seraph': { sprite: 'void-seraph.png',    hp: 520, speed: 165, dmg: 26, range: 760, cd: 2.4, el: 'shadow', scale: 1.9,  name: 'Hollow Knight' }
+    ravener:       { sprite: 'ravener.png',        hp: 90,  speed: 240, dmg: 10, range: 0,   cd: 0,   el: null,     scale: 1.00, behavior: 'pounce', name: 'Ravener' },
+    hellforged:    { sprite: 'hellforged.png',     hp: 150, speed: 150, dmg: 14, range: 640, cd: 2.6, el: 'fire',   scale: 1.10, behavior: 'brace', name: 'Hellforged' },
+    'gorgon-x':    { sprite: 'gorgon-x.png',       hp: 120, speed: 175, dmg: 13, range: 700, cd: 2.1, el: 'bolt',   scale: 1.05, behavior: 'circle', name: 'Gorgon' },
+    noctilith:     { sprite: 'noctilith.png',      hp: 140, speed: 145, dmg: 15, range: 680, cd: 2.8, el: 'shadow', scale: 1.10, behavior: 'stalk', name: 'Noctilith' },
+    'bone-warden': { sprite: 'bone-warden.png',    hp: 240, speed: 125, dmg: 20, range: 520, cd: 3.2, el: 'shadow', scale: 1.18, behavior: 'march', name: 'Bone Warden' },
+    'elem-fire':   { sprite: 'elem-fire.png',      hp: 140, speed: 170, dmg: 16, range: 620, cd: 2.3, el: 'fire',   scale: 1.08, behavior: 'rush', name: 'Magma Lurker' },
+    'elem-storm':  { sprite: 'elem-storm.png',     hp: 140, speed: 160, dmg: 12, range: 720, cd: 2.1, el: 'storm',  scale: 1.08, behavior: 'circle', name: 'Storm Caller' },
+    'elem-rime':   { sprite: 'elem-rime.png',      hp: 140, speed: 115, dmg: 12, range: 820, cd: 2.6, el: 'rime',   scale: 1.10, behavior: 'kite', name: 'Rime Warden' },
+    'elem-quake':  { sprite: 'elem-quake.png',     hp: 140, speed: 100, dmg: 18, range: 420, cd: 3.4, el: 'quake',  scale: 1.08, behavior: 'march', name: 'Quake Strider' },
+    'elem-soul':   { sprite: 'elem-soul.png',      hp: 140, speed: 150, dmg: 13, range: 620, cd: 3.2, el: 'soul',   scale: 1.08, behavior: 'drift', name: 'Soul Mote' },
+    'void-seraph': { sprite: 'void-seraph.png',    hp: 520, speed: 165, dmg: 26, range: 760, cd: 2.4, el: 'shadow', scale: 1.9,  behavior: 'stalk', name: 'Hollow Knight' }
   };
 
   function tex(file) {
@@ -291,7 +291,7 @@
       kind: kind, type: kind, name: opts.name || def.name, mesh: group, bill: bill, body: body,
       bar: bar, barFill: barFill,
       hp: opts.hp || def.hp, maxHp: opts.hp || def.hp, dmg: def.dmg, speed: def.speed,
-      cd: def.cd, range: def.range, el: def.el, height: H,
+      cd: def.cd, range: def.range, el: def.el, behavior: def.behavior, height: H,
       pos: { x: x, z: z }, y: y, home: home || { x: x, z: z },
       hitT: 0, dead: false, boss: !!opts.boss, phase: Math.random() * 6.283, shotAt: 0, aspect: a0
     };
@@ -422,13 +422,39 @@
     const dx = player.x - e.pos.x, dz = player.z - e.pos.z;
     const d = Math.hypot(dx, dz) || 1;
     // a sanctum guardian sets its own fighting distance (bossattacks.js)
-    const keep = e.keep != null ? e.keep : (e.el === 'quake' ? 280 : (e.range ? Math.min(e.range * 0.6, 320) : 80));
+    const keep = e.keep != null ? e.keep : (e.el === 'quake' ? 280 : (e.range ? Math.min(e.range * 0.62, 520) : 80));
     const aggro = e.boss ? 1700 : 1200;
 
-    if (d < aggro && d > keep) {
-      const step = Math.min(e.speed * dt, d - keep);
-      const nx = e.pos.x + (dx / d) * step;
-      const nz = e.pos.z + (dz / d) * step;
+    const retreat = (e.behavior === 'kite' && d < 360) || (e.behavior === 'brace' && d < 210);
+    if (d < aggro && (d > keep || retreat)) {
+      let moveX = dx / d, moveZ = dz / d, pace = e.speed;
+      if (retreat) {
+        moveX = -moveX;
+        moveZ = -moveZ;
+        pace *= e.behavior === 'kite' ? 0.9 : 0.72;
+      } else if (e.behavior === 'pounce') {
+        pace *= 0.48 + 1.05 * Math.max(0, Math.sin(now * 2.7 + e.phase));
+      } else if (e.behavior === 'rush') {
+        pace *= 0.78 + 0.52 * Math.max(0, Math.sin(now * 1.9 + e.phase));
+      } else if (e.behavior === 'brace') {
+        pace *= 0.62;
+      } else if (e.behavior === 'kite') {
+        pace *= 0.72;
+      } else if (e.behavior === 'circle' || e.behavior === 'stalk' || e.behavior === 'drift') {
+        const side = e.behavior === 'drift' ? 0.48 : 0.68;
+        const sign = Math.sin(now * 0.55 + e.phase) < 0 ? -1 : 1;
+        const toward = e.behavior === 'stalk' ? 0.76 : 0.88;
+        moveX = (dx / d) * toward - (dz / d) * side * sign;
+        moveZ = (dz / d) * toward + (dx / d) * side * sign;
+        const moveLen = Math.hypot(moveX, moveZ) || 1;
+        moveX /= moveLen;
+        moveZ /= moveLen;
+        if (e.behavior === 'drift') pace *= 0.86;
+      }
+      const gap = retreat ? (e.behavior === 'kite' ? 360 : 210) - d : d - keep;
+      const step = Math.min(pace * dt, Math.max(0, gap));
+      const nx = e.pos.x + moveX * step;
+      const nz = e.pos.z + moveZ * step;
       // monsters never walk into water or through the village's walls
       const g = C.groundAt ? C.groundAt(nx, nz) : C.height(nx, nz);
       if (g > 6) { e.pos.x = nx; e.pos.z = nz; }
@@ -439,7 +465,7 @@
 
     if (e.bar && C.camera) e.bar.quaternion.copy(C.camera.quaternion);
     if (e.body) {
-      const moving = d < aggro && d > keep + 8;
+      const moving = d < aggro && (d > keep + 8 || retreat);
       if (d < aggro) e.body.group.rotation.y = Math.atan2(dx, dz);
       e.body.animate(now + e.phase, moving, e.hitT > 0);
       const base = e.height / e.body.height;

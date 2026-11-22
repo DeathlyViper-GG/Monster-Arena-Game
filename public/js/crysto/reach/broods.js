@@ -148,7 +148,9 @@
     C.scene.add(e.mesh);
     list.push(e);
     matriarch = e;
-    C.hud.banner('The Hollow Matriarch', 'She comes up out of the crown');
+    const announce = () => C.hud.banner('The Hollow Matriarch', 'She comes up out of the crown');
+    if (C.playFilm) C.playFilm('matriarch', announce);
+    else announce();
   }
 
   R.matriarchDown = function () {

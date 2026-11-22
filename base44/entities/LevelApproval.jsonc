@@ -1,0 +1,45 @@
+{
+  "name": "LevelApproval",
+  "type": "object",
+  "properties": {
+    "level_id": {
+      "type": "string",
+      "description": "Id of the CustomLevel that DeathlyViper approved"
+    },
+    "level_name": {
+      "type": "string",
+      "description": "Level title at the moment of approval"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "approved"
+      ],
+      "enumColors": [
+        "green"
+      ],
+      "default": "approved"
+    }
+  },
+  "required": [
+    "level_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "email": "akalexkar@outlook.com"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "email": "akalexkar@outlook.com"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "email": "akalexkar@outlook.com"
+      }
+    }
+  }
+}

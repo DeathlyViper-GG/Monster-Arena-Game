@@ -1,0 +1,35 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Sender's display name (max 18 chars)"
+    },
+    "text": {
+      "type": "string",
+      "description": "Message body (max 140 chars)"
+    },
+    "rank": {
+      "type": "number",
+      "description": "Sender's rank level, used for the badge beside their name"
+    }
+  },
+  "required": [
+    "text"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

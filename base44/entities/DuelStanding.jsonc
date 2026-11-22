@@ -1,0 +1,51 @@
+{
+  "name": "DuelStanding",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Duelist's display name as it appears on the global duel leaderboard"
+    },
+    "points": {
+      "type": "number",
+      "default": 0,
+      "description": "Duel ladder points: 3 per duel won, 1 per duel lost"
+    },
+    "wins": {
+      "type": "number",
+      "default": 0,
+      "description": "Duels won"
+    },
+    "losses": {
+      "type": "number",
+      "default": 0,
+      "description": "Duels lost"
+    },
+    "streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Current winning streak, reset to zero by a loss"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

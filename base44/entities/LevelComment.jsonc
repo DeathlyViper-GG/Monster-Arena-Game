@@ -1,0 +1,42 @@
+{
+  "name": "LevelComment",
+  "type": "object",
+  "properties": {
+    "level_id": {
+      "type": "string",
+      "description": "Id of the CustomLevel this comment belongs to"
+    },
+    "level_name": {
+      "type": "string",
+      "description": "Level title at the time of posting"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of the player"
+    },
+    "text": {
+      "type": "string",
+      "description": "The comment body (max 400 chars)"
+    }
+  },
+  "required": [
+    "level_id",
+    "text"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

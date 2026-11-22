@@ -1,0 +1,60 @@
+/* =====================================================================
+   avatar.css — the Customise wardrobe: live 3D stage, outfit rail.
+   ===================================================================== */
+.avWrap{ display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 14px; align-items:stretch; }
+
+.avStage{
+  position:relative; flex:1 1 320px; min-width:250px; aspect-ratio:16/11; border-radius:16px; overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 50% 10%, rgba(90,160,255,.20), rgba(8,6,16,.94) 62%),
+    radial-gradient(60% 50% at 50% 100%, rgba(160,90,255,.18), rgba(0,0,0,0) 70%),
+    #07060f;
+  border:1px solid rgba(150,90,240,.34);
+  box-shadow:inset 0 0 46px rgba(80,60,160,.30), 0 10px 30px rgba(0,0,0,.5);
+}
+.avStage::after{
+  content:""; position:absolute; inset:0; pointer-events:none; border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 34%);
+}
+.avStage canvas{ display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
+.avStage canvas:active{ cursor:grabbing; }
+
+.avTag{
+  position:absolute; left:12px; top:10px; pointer-events:none;
+  font:800 13px/1.1 ui-sans-serif,system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase;
+  color:#eaf4ff; text-shadow:0 0 12px rgba(120,190,255,.75), 0 2px 10px rgba(0,0,0,.8);
+}
+.avHint{
+  position:absolute; right:12px; top:11px; pointer-events:none; opacity:.5;
+  font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#9fb0d8;
+}
+.avMeta{
+  position:absolute; left:12px; right:12px; bottom:10px; pointer-events:none;
+  font-size:11px; line-height:1.45; color:#b9c6e8; opacity:.88; text-shadow:0 1px 6px rgba(0,0,0,.9);
+}
+
+.avSide{ flex:1 1 210px; min-width:190px; display:flex; flex-direction:column; gap:8px; }
+.avSideTitle{ font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:#9fd2ff; opacity:.8; }
+.clothesRow{ display:flex; flex-direction:column; gap:6px; max-height:286px; overflow-y:auto; padding-right:4px; }
+.clothesRow::-webkit-scrollbar{ width:5px; }
+.clothesRow::-webkit-scrollbar-thumb{ background:rgba(160,110,255,.45); border-radius:4px; }
+
+.fitBtn{
+  display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:11px; cursor:pointer; text-align:left;
+  background:linear-gradient(180deg, rgba(26,20,44,.92), rgba(12,9,22,.92));
+  border:1px solid rgba(120,90,200,.32); color:#d8d0f5;
+  font:600 12px/1.2 ui-sans-serif,system-ui,sans-serif;
+  transition:border-color .18s ease, box-shadow .18s ease, transform .12s ease, color .18s ease;
+}
+.fitBtn:hover{ transform:translateX(2px); border-color:rgba(160,110,255,.85); color:#fff; }
+.fitBtn.is-active{ border-color:#5ad2ff; color:#fff; box-shadow:0 0 0 1px #5ad2ff inset, 0 0 18px rgba(90,210,255,.42); }
+.fitChip{ width:14px; height:14px; border-radius:4px; border:1px solid rgba(255,255,255,.35); flex:0 0 auto; }
+.fitName{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.skinTheme{ font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#9fd2ff; opacity:.6; margin-top:-5px; }
+
+@media (max-width:760px){
+  .avStage{ aspect-ratio:4/3; }
+  .clothesRow{ max-height:168px; }
+  .avMeta{ display:none; }
+}

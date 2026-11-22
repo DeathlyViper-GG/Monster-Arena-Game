@@ -1,0 +1,4 @@
+{
+  "name": "game_server",
+  "entry": "entry.ts"
+}

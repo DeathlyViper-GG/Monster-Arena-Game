@@ -1,0 +1,336 @@
+/* ===== GLOBAL CHAT =====
+   One channel shared by everyone in the game. It floats on the main menu so
+   players can talk before they ever open a lobby, and the same message
+   styling is reused by the lobby chat and the in-match feed. */
+
+.gc-home{
+  position:fixed; right:18px; top:18px; z-index:24;
+  width:334px; max-width:calc(100vw - 32px);
+  display:flex; flex-direction:column;
+  border-radius:18px; overflow:hidden;
+  background:
+    radial-gradient(130% 90% at 50% -25%, rgba(126,92,250,.30), transparent 62%),
+    radial-gradient(90% 60% at 100% 100%, rgba(60,190,255,.12), transparent 70%),
+    linear-gradient(180deg, rgba(13,10,26,.94), rgba(5,7,15,.97));
+  border:1px solid rgba(152,112,255,.34);
+  box-shadow:
+    0 24px 64px rgba(0,0,0,.68),
+    0 0 46px rgba(140,80,220,.26),
+    inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter:blur(12px) saturate(1.25);
+  animation:gc-in .5s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes gc-in{ from{ opacity:0; transform:translateY(-16px) scale(.98) } to{ opacity:1; transform:translateY(0) scale(1) } }
+
+/* Aurora rim that breathes, plus a light sweep across the header. */
+.gc-home::before{
+  content:""; position:absolute; inset:0; border-radius:18px; padding:1px; pointer-events:none; z-index:3;
+  background:conic-gradient(from 210deg,
+    rgba(90,210,255,0), rgba(122,208,255,.55), rgba(192,102,255,.7),
+    rgba(255,190,120,.5), rgba(125,255,190,.28), rgba(90,210,255,0));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  opacity:.7; animation:gc-rim 7s ease-in-out infinite;
+}
+@keyframes gc-rim{ 0%,100%{ opacity:.45 } 50%{ opacity:.9 } }
+.gc-home::after{
+  content:""; position:absolute; top:0; left:-40%; width:40%; height:1.5px; pointer-events:none; z-index:3;
+  background:linear-gradient(90deg, transparent, rgba(190,230,255,.95), transparent);
+  animation:gc-sheen 6.5s ease-in-out infinite;
+}
+@keyframes gc-sheen{ 0%{ left:-45% } 55%,100%{ left:105% } }
+
+/* ---- tabs ---- */
+.gc-tabs{
+  position:relative; z-index:2;
+  display:flex; align-items:center; gap:6px; padding:9px 10px;
+  border-bottom:1px solid rgba(150,110,255,.22);
+  background:linear-gradient(90deg, rgba(120,80,220,.22), rgba(90,210,255,.10));
+}
+.gc-tab{
+  appearance:none; cursor:pointer; padding:6px 13px; border-radius:999px;
+  font-size:10px; font-weight:900; letter-spacing:.11em; text-transform:uppercase;
+  color:#b3c8ea; background:rgba(8,12,24,.62);
+  border:1px solid rgba(122,92,205,.42);
+  transition:color .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease, transform .15s ease;
+}
+.gc-tab:hover{ color:#fff; border-color:rgba(160,110,255,.9); transform:translateY(-1px); }
+.gc-tab.is-active{
+  color:#eafcff; border-color:rgba(120,215,255,.9);
+  background:linear-gradient(180deg, rgba(36,72,128,.92), rgba(14,28,52,.92));
+  box-shadow:0 0 18px rgba(90,210,255,.42), inset 0 0 12px rgba(120,200,255,.16);
+}
+
+.gc-name-label{
+  padding:12px 13px 6px; font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:#9fd2ff; opacity:.9;
+}
+.gc-name-hint{ padding:0 13px 12px; font-size:10.5px; line-height:1.5; color:#8f9dc0; }
+.gc-name-hint b{ color:#e6f1ff; }
+
+.gc-home-live{
+  margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+  font-size:9px; font-weight:800; letter-spacing:.18em; color:#7cf7c4;
+}
+.gc-home-live::before{
+  content:""; width:6px; height:6px; border-radius:50%; background:#3ff0a5;
+  box-shadow:0 0 10px rgba(63,240,165,.95);
+  animation:gc-live 2s ease-in-out infinite;
+}
+@keyframes gc-live{ 0%,100%{ opacity:.32; transform:scale(.85) } 50%{ opacity:1; transform:scale(1.15) } }
+
+/* ---- feed ---- */
+.gc-feed{
+  position:relative; z-index:2;
+  flex:1 1 auto; height:158px; overflow-y:auto; padding:9px 10px;
+  display:flex; flex-direction:column; gap:5px;
+  font-size:12px; line-height:1.45; color:#dfe9ff;
+  scrollbar-width:thin; scrollbar-color:rgba(150,90,240,.6) transparent;
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px),
+    radial-gradient(80% 60% at 50% 0%, rgba(120,90,220,.10), transparent 70%);
+}
+.gc-feed:empty::after{
+  content:"No messages yet — say hello."; margin:auto; font-size:11px; font-style:italic;
+  color:#7d88a8; letter-spacing:.04em;
+}
+.gc-feed::-webkit-scrollbar{ width:7px; }
+.gc-feed::-webkit-scrollbar-track{ background:transparent; }
+.gc-feed::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg, rgba(170,120,255,.75), rgba(90,210,255,.6));
+  border-radius:99px; box-shadow:0 0 8px rgba(150,90,240,.6);
+}
+
+/* ---- one message ---- */
+.gc-feed .chat-line,
+.mp-chat-feed .chat-line,
+.chat-hud-feed .chat-line{
+  position:relative; padding:6px 10px 7px 12px; border-radius:11px;
+  word-break:break-word;
+  background:linear-gradient(180deg, rgba(38,30,68,.5), rgba(16,13,32,.44));
+  border:1px solid rgba(140,110,230,.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+  animation:gc-msg .3s cubic-bezier(.22,1,.36,1) both;
+  transition:border-color .2s ease, background .2s ease, transform .18s ease, box-shadow .2s ease;
+}
+@keyframes gc-msg{ from{ opacity:0; transform:translateY(5px) } to{ opacity:1; transform:translateY(0) } }
+.gc-feed .chat-line::before,
+.mp-chat-feed .chat-line::before,
+.chat-hud-feed .chat-line::before{
+  content:""; position:absolute; left:0; top:14%; bottom:14%; width:2px; border-radius:2px;
+  background:linear-gradient(180deg, rgba(122,208,255,.9), rgba(192,102,255,.7));
+  opacity:.35; transition:opacity .2s ease;
+}
+.gc-feed .chat-line:hover,
+.mp-chat-feed .chat-line:hover{
+  border-color:rgba(160,120,255,.5);
+  background:linear-gradient(180deg, rgba(54,42,96,.62), rgba(22,17,42,.52));
+  box-shadow:0 0 18px rgba(140,90,240,.22), inset 0 1px 0 rgba(255,255,255,.05);
+  transform:translateX(1px);
+}
+.gc-feed .chat-line:hover::before,
+.mp-chat-feed .chat-line:hover::before{ opacity:1; }
+
+.gc-feed .chat-line b,
+.mp-chat-feed .chat-line b,
+.chat-hud-feed .chat-line b{
+  color:#bfe9ff; font-weight:900; letter-spacing:.02em;
+  text-shadow:0 0 10px rgba(90,200,255,.45);
+}
+.gc-feed .chat-line b::after{ content:" "; }
+.gc-feed .rank-badge{ margin-right:4px; }
+
+/* ---- composer ---- */
+.gc-row{
+  position:relative; z-index:2;
+  display:flex; align-items:center; gap:7px; padding:9px 10px 10px;
+  border-top:1px solid rgba(150,110,255,.18);
+  background:linear-gradient(180deg, rgba(120,80,220,.07), rgba(0,0,0,0));
+}
+.gc-row .input{
+  flex:1 1 auto; min-width:0; padding:9px 13px; font-size:12px;
+  color:#eaf3ff; background:rgba(6,10,20,.92);
+  border:1px solid rgba(130,95,220,.45); border-radius:999px; outline:none;
+  transition:border-color .2s ease, box-shadow .25s ease, background .2s ease;
+}
+.gc-row .input::placeholder{ color:#6f7d9c; }
+.gc-row .input:focus{
+  border-color:rgba(120,215,255,.9); background:rgba(8,14,26,.96);
+  box-shadow:0 0 0 2px rgba(90,210,255,.14), 0 0 20px rgba(90,210,255,.28);
+}
+.gc-row .btn{
+  flex:0 0 auto; padding:9px 16px; border-radius:999px; cursor:pointer;
+  font-size:10.5px; font-weight:900; letter-spacing:.1em; text-transform:uppercase;
+  color:#eafcff;
+  background:linear-gradient(180deg, rgba(48,84,156,.96), rgba(20,34,66,.96));
+  border:1px solid rgba(120,210,255,.6);
+  box-shadow:0 0 16px rgba(90,210,255,.25), inset 0 1px 0 rgba(255,255,255,.12);
+  transition:box-shadow .2s ease, transform .15s ease, filter .2s ease;
+}
+.gc-row .btn:hover{
+  box-shadow:0 0 26px rgba(90,210,255,.55), inset 0 1px 0 rgba(255,255,255,.18);
+  transform:translateY(-1px); filter:brightness(1.08);
+}
+.gc-row .btn:active{ transform:translateY(0) scale(.98); }
+
+/* ---- lobby chat panel shares the look ---- */
+.mp-chat{
+  border-radius:14px !important;
+  border:1px solid rgba(150,110,255,.28) !important;
+  background:
+    radial-gradient(120% 80% at 50% -20%, rgba(120,90,220,.16), transparent 65%),
+    linear-gradient(180deg, rgba(13,10,26,.9), rgba(6,8,16,.92)) !important;
+  box-shadow:0 14px 34px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.mp-chat-head{
+  font-weight:900 !important; letter-spacing:.14em !important; color:#bfe9ff !important;
+  background:linear-gradient(90deg, rgba(120,80,220,.22), rgba(90,210,255,.10));
+  border-bottom:1px solid rgba(150,110,255,.2) !important;
+}
+.mp-chat-feed{
+  display:flex; flex-direction:column; gap:5px;
+  padding:9px 10px !important;
+  background:repeating-linear-gradient(180deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px) !important;
+}
+.mp-chat-row{ border-top:1px solid rgba(150,110,255,.18) !important; padding:9px 10px !important; }
+.mp-chat-row .input{
+  padding:9px 13px !important; border-radius:999px !important;
+  border:1px solid rgba(130,95,220,.45) !important;
+  transition:border-color .2s ease, box-shadow .25s ease !important;
+}
+.mp-chat-row .input:focus{ border-color:rgba(120,215,255,.9) !important; box-shadow:0 0 0 2px rgba(90,210,255,.14), 0 0 18px rgba(90,210,255,.26) !important; }
+.mp-chat-row .btn{
+  border-radius:999px !important; font-weight:900 !important; letter-spacing:.08em !important;
+  color:#eafcff !important;
+  background:linear-gradient(180deg, rgba(48,84,156,.96), rgba(20,34,66,.96)) !important;
+  border:1px solid rgba(120,210,255,.6) !important;
+  box-shadow:0 0 16px rgba(90,210,255,.22);
+}
+
+/* ---- in-match feed ---- */
+.chat-hud-feed{
+  gap:5px !important;
+  background:linear-gradient(180deg, rgba(8,6,16,.78), rgba(4,4,10,.8)) !important;
+  border:1px solid rgba(140,100,240,.4) !important;
+  box-shadow:0 10px 30px rgba(0,0,0,.55), inset 0 0 22px rgba(120,90,220,.12);
+}
+.chat-hud-input{
+  border-radius:999px !important;
+  box-shadow:0 0 18px rgba(160,110,255,.28);
+}
+.chat-hud-input:focus{ border-color:rgba(120,215,255,.9) !important; box-shadow:0 0 0 2px rgba(90,210,255,.16), 0 0 22px rgba(90,210,255,.35); }
+
+/* ===== AESTHETIC PASS ===== */
+.gc-home{
+  border-radius:20px;
+  box-shadow:0 28px 80px rgba(0,0,0,.72), 0 0 60px rgba(120,70,220,.32), inset 0 1px 0 rgba(255,255,255,.09);
+}
+/* slow aurora drifting inside the panel */
+.gc-home .gc-pane{ position:relative; }
+.gc-home .gc-pane::before{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:1;
+  background:
+    radial-gradient(60% 45% at 15% 0%, rgba(120,200,255,.10), transparent 70%),
+    radial-gradient(55% 45% at 90% 100%, rgba(200,110,255,.13), transparent 70%);
+  animation:gc-aurora 9s ease-in-out infinite alternate;
+}
+@keyframes gc-aurora{ from{ opacity:.5; transform:translate3d(0,0,0) } to{ opacity:1; transform:translate3d(0,-6px,0) } }
+
+.gc-feed{
+  position:relative; z-index:2;
+  -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+  mask-image:linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+}
+
+/* usernames glow in a cyan → violet → gold gradient */
+.gc-feed .chat-line b,
+.mp-chat-feed .chat-line b,
+.chat-hud-feed .chat-line b{
+  background:linear-gradient(92deg,#8ff0ff,#c3a4ff 55%,#ffd9a8);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow:none; font-weight:900;
+}
+
+.gc-feed .chat-line,
+.mp-chat-feed .chat-line{
+  border-radius:12px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 6px 16px rgba(0,0,0,.22);
+}
+.gc-feed .chat-line:hover,
+.mp-chat-feed .chat-line:hover{ transform:translateX(2px) scale(1.005); }
+
+/* tiny live pip on each message */
+.gc-feed .chat-line::after{
+  content:""; position:absolute; right:9px; top:9px; width:4px; height:4px; border-radius:50%;
+  background:rgba(150,220,255,.5); box-shadow:0 0 8px rgba(120,210,255,.9);
+}
+
+/* active tab gets a glowing underline */
+.gc-tab{ position:relative; overflow:hidden; }
+.gc-tab.is-active::after{
+  content:""; position:absolute; left:18%; right:18%; bottom:2px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,transparent,#7ad6ff,transparent);
+  box-shadow:0 0 12px rgba(120,210,255,.9);
+}
+
+/* send button: light sweeps across on hover */
+.gc-row .btn{ position:relative; overflow:hidden; }
+.gc-row .btn::after{
+  content:""; position:absolute; top:0; bottom:0; left:-60%; width:45%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
+  transform:skewX(-18deg); transition:left .45s ease;
+}
+.gc-row .btn:hover::after{ left:120%; }
+
+/* ---- minimise / restore ---- */
+.gc-home{ transition:width .26s cubic-bezier(.22,1,.36,1), height .26s cubic-bezier(.22,1,.36,1), border-radius .26s ease; }
+.gc-home .gc-tabs{ padding-right:44px; }
+
+.gc-min{
+  position:absolute; top:8px; right:9px; z-index:6;
+  width:24px; height:24px; padding:0; display:grid; place-items:center;
+  cursor:pointer; line-height:1; font-size:15px; font-weight:900; color:#bfe9ff;
+  background:rgba(8,12,24,.62); border:1px solid rgba(122,92,205,.45); border-radius:8px;
+  transition:color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .15s ease;
+}
+.gc-min:hover{ color:#fff; border-color:rgba(160,110,255,.9); box-shadow:0 0 14px rgba(150,90,240,.6); transform:translateY(-1px); }
+.gc-min:active{ transform:scale(.94); }
+
+.gc-home.is-min{
+  width:52px; height:52px; border-radius:50%; cursor:pointer;
+  box-shadow:0 14px 36px rgba(0,0,0,.62), 0 0 32px rgba(140,80,220,.42), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.gc-home.is-min .gc-tabs,
+.gc-home.is-min .gc-pane{ display:none; }
+.gc-home.is-min::after{ display:none; }
+.gc-home.is-min .gc-min{
+  position:absolute; inset:0; width:100%; height:100%;
+  border-radius:50%; border-color:transparent; background:transparent; font-size:22px;
+}
+
+@media (max-width:760px){
+  .gc-home{ right:10px; left:10px; bottom:auto; top:10px; width:auto; max-width:none; }
+  .gc-feed{ height:94px; }
+  .gc-row .btn{ padding:9px 12px; }
+  .gc-home.is-min{ left:auto; width:52px; height:52px; }
+}
+
+/* The chat button: one tap opens the room's chat, and the dot means somebody
+   (a player or one of the regulars) said something while it was closed. */
+.mp-chat-btn{
+  position:fixed; right:14px; top:52%; z-index:60;
+  display:none; align-items:center; justify-content:center;
+  width:46px; height:46px; border-radius:999px;
+  border:1px solid rgba(34,230,255,.45);
+  background:rgba(14,18,30,.82); color:#dff6ff; font-size:20px; line-height:1;
+  cursor:pointer; backdrop-filter:blur(6px);
+  box-shadow:0 6px 22px rgba(0,0,0,.45), 0 0 18px rgba(34,230,255,.18);
+}
+.mp-chat-btn:active{ transform:scale(.94); }
+.mp-chat-dot{
+  display:none; position:absolute; top:6px; right:7px; width:9px; height:9px;
+  border-radius:999px; background:#ff4d6d; box-shadow:0 0 8px rgba(255,77,109,.9);
+}
+@media (max-width:760px){
+  .mp-chat-btn{ top:auto; bottom:132px; right:12px; width:44px; height:44px; }
+}

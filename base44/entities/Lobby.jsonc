@@ -1,0 +1,54 @@
+{
+  "name": "Lobby",
+  "type": "object",
+  "properties": {
+    "lobbyId": {
+      "type": "string",
+      "description": "Short unique lobby code used in the shareable multiplayer link"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "pve",
+        "pvp",
+        "teams",
+        "ctf"
+      ],
+      "default": "pve"
+    },
+    "hostId": {
+      "type": "string",
+      "description": "User id of the lobby host (the first player to join)"
+    },
+    "state": {
+      "type": "object",
+      "description": "Full mutable authoritative lobby/world state: world, players, enemies, bullets, pickups, scores, inputs, wave, phase, glyphTimer, chestVer, pickupVer, snapshot, startTime, started, levelId, mapSeed, worldKey, lastTick, giants, golems, ctf, winner, chat"
+    }
+  },
+  "required": [
+    "lobbyId",
+    "mode"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

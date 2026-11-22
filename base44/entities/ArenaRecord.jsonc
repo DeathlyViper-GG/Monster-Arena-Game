@@ -1,0 +1,47 @@
+{
+  "name": "ArenaRecord",
+  "type": "object",
+  "properties": {
+    "player_name": {
+      "type": "string",
+      "description": "Name shown on the hall's holographic leaderboard"
+    },
+    "rank_level": {
+      "type": "number",
+      "default": 1,
+      "description": "Rank level, drawn as the badge beside the name"
+    },
+    "best_wave": {
+      "type": "number",
+      "default": 0,
+      "description": "Highest wave cleared in a normal run"
+    },
+    "kills": {
+      "type": "number",
+      "default": 0,
+      "description": "Monsters killed across every run"
+    },
+    "staff": {
+      "type": "boolean",
+      "default": false,
+      "description": "Developer account: its admin-assisted runs never top the board"
+    }
+  },
+  "required": [
+    "player_name"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

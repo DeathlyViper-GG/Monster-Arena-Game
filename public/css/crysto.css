@@ -1,0 +1,477 @@
+/* Crysto's own hand — parchment, gold and deep green. Nothing here borrows the
+   arena's neon: this is the world on the other side of the pod. */
+.cy-hud {
+  position: fixed;
+  inset: 0;
+  z-index: 26000;
+  pointer-events: none;
+  font-family: 'EB Garamond', Georgia, serif;
+  color: #f6ecd6;
+  display: none;
+}
+.cy-hud * { box-sizing: border-box; }
+
+.cy-top {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: min(360px, 62vw);
+}
+
+.cy-quest {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(18, 26, 20, 0.82), rgba(10, 16, 12, 0.88));
+  border: 1px solid rgba(214, 178, 106, 0.42);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45), inset 0 0 30px rgba(214, 178, 106, 0.08);
+  backdrop-filter: blur(3px);
+}
+.cy-qt {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #e8c98a;
+}
+.cy-qo {
+  margin-top: 4px;
+  font-size: 17px;
+  line-height: 1.25;
+  color: #f8f0dc;
+}
+.cy-qd {
+  margin-top: 3px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #a9c4a0;
+}
+
+/* The life left in the walker, read as a bar rather than a row of hearts. */
+.cy-hp { display: flex; align-items: center; gap: 9px; padding-left: 4px; }
+.cy-hp-track {
+  position: relative;
+  width: 172px;
+  height: 14px;
+  border-radius: 8px;
+  background: rgba(10, 8, 14, 0.74);
+  border: 1px solid rgba(255, 214, 176, 0.42);
+  box-shadow: inset 0 0 9px rgba(0, 0, 0, 0.72), 0 2px 8px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.cy-hp-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #7dbb4a, #cdf08a);
+  box-shadow: 0 0 12px rgba(150, 230, 130, 0.6);
+  transition: width 0.18s ease;
+}
+.cy-hp.low .cy-hp-fill {
+  background: linear-gradient(90deg, #b4302a, #ff7a5c);
+  box-shadow: 0 0 14px rgba(255, 90, 70, 0.7);
+}
+.cy-hp-text {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #f2e6d2;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+
+.cy-compass {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(12, 20, 14, 0.7);
+  border: 1px solid rgba(214, 178, 106, 0.4);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.cy-needle {
+  display: inline-block;
+  color: #ffd27a;
+  font-size: 15px;
+  transition: transform 0.12s linear;
+}
+.cy-cdist { font-size: 12px; letter-spacing: 0.1em; color: #dfe8d2; }
+
+.cy-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 190px;
+  transform: translateX(-50%) translateY(8px);
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(10, 16, 12, 0.82);
+  border: 1px solid rgba(214, 178, 106, 0.55);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+.cy-prompt.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.cy-banner {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translate(-50%, -10px);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.cy-banner.on { opacity: 1; transform: translate(-50%, 0); }
+.cy-bt {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: clamp(20px, 3.4vw, 34px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffe4a8;
+  text-shadow: 0 4px 26px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 196, 90, 0.35);
+}
+.cy-bs {
+  margin-top: 4px;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #cfdcc2;
+}
+
+.cy-dialogue {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%) translateY(14px);
+  width: min(760px, calc(100vw - 40px));
+  padding: 18px 22px 16px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(20, 26, 18, 0.94), rgba(9, 13, 10, 0.96));
+  border: 1px solid rgba(214, 178, 106, 0.5);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.cy-dialogue.on { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); cursor: pointer; }
+.cy-who {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e8c98a;
+}
+.cy-line {
+  margin-top: 8px;
+  min-height: 48px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: #f4ecd9;
+}
+.cy-next {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9fb894;
+}
+
+.cy-choose {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 260px;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(20, 26, 18, 0.96), rgba(9, 13, 10, 0.97));
+  border: 1px solid rgba(214, 178, 106, 0.5);
+  display: none;
+  pointer-events: auto;
+}
+.cy-choose.on { display: block; }
+.cy-ch-title {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #e8c98a;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.cy-ch-item, .cy-ch-close {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(48, 66, 46, 0.55);
+  border: 1px solid rgba(214, 178, 106, 0.35);
+  color: #f2ead6;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.cy-ch-item:hover, .cy-ch-close:hover {
+  background: rgba(74, 100, 66, 0.7);
+  border-color: rgba(255, 210, 122, 0.8);
+}
+.cy-ch-close { background: transparent; color: #a9bda0; }
+
+.cy-hint {
+  position: absolute;
+  left: 50%;
+  top: 62px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(226, 236, 214, 0.55);
+  white-space: nowrap;
+}
+
+.cy-hands { position: absolute; inset: 0; pointer-events: none; }
+.cy-stick {
+  position: absolute;
+  left: 26px;
+  bottom: 30px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20, 28, 20, 0.55), rgba(10, 14, 10, 0.35));
+  border: 1px solid rgba(214, 178, 106, 0.4);
+  pointer-events: auto;
+  touch-action: none;
+}
+.cy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 226, 160, 0.85), rgba(160, 130, 70, 0.7));
+  border: 1px solid rgba(255, 236, 190, 0.7);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.cy-btn {
+  position: absolute;
+  bottom: 44px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 1px solid rgba(214, 178, 106, 0.55);
+  background: radial-gradient(circle, rgba(46, 60, 40, 0.9), rgba(16, 22, 16, 0.9));
+  color: #ffe0a0;
+  font-size: 26px;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+/* Kept clear of the announcements panel in the corner. */
+.cy-atk { left: calc(50% - 190px); }
+.cy-use { left: calc(50% - 86px); font-size: 22px; }
+.cy-dash { left: calc(50% + 20px); font-size: 20px; }
+.cy-jump { left: calc(50% + 116px); font-size: 20px; }
+
+/* ---- what is in your hands ---- */
+.cy-arms {
+  position: absolute;
+  right: 20px;
+  bottom: 24px;
+  text-align: right;
+  padding: 9px 16px 10px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(18, 26, 20, 0.78), rgba(10, 16, 12, 0.86));
+  border: 1px solid rgba(214, 178, 106, 0.38);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45), inset 0 0 24px rgba(214, 178, 106, 0.06);
+}
+.cy-arms {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cy-armimg {
+  height: 46px;
+  width: auto;
+  max-width: 132px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}
+.cy-armtxt { text-align: right; }
+.cy-an {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e8c98a;
+}
+.cy-aa {
+  margin-top: 2px;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  color: #f8f0dc;
+}
+
+/* ---- a sanctum's guardian ---- */
+.cy-boss {
+  position: absolute;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  width: min(560px, 78vw);
+  padding: 8px 14px 11px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(20, 12, 14, 0.86), rgba(10, 6, 8, 0.9));
+  border: 1px solid rgba(232, 120, 96, 0.55);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 26px rgba(232, 100, 80, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.cy-boss.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.cy-bn {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #ffd9c8;
+  margin-bottom: 6px;
+}
+/* the move the guardian is winding up, so a pattern can be read and learned */
+.cy-bm {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #ffb9a0;
+  opacity: 0.9;
+  margin: -3px 0 6px;
+  min-height: 11px;
+  text-shadow: 0 0 12px rgba(255, 140, 100, 0.5);
+}
+.cy-bt-track {
+  position: relative;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 190, 170, 0.3);
+}
+.cy-bf {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e8564d, #ffb45c);
+  box-shadow: 0 0 14px rgba(255, 140, 100, 0.6) inset;
+  transition: width 0.12s linear;
+}
+
+/* ---- progress saved ---- */
+.cy-save {
+  position: absolute;
+  right: 22px;
+  bottom: 96px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #a9c4a0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.cy-save.on { opacity: 0.95; }
+
+/* ---- the aim point, and a film played inside the world ---- */
+/* ---- the aim point: the arena's own reticle, drawn in its own colours ----
+   Sized and positioned exactly as the pit's #crosshair3d, so the gun sights
+   up under the same point in both worlds. */
+.cy-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s linear;
+  --xh-col: #f6ecd6;
+  --xh-gap: 6px;
+  --xh-r: 12px;
+}
+
+.cy-scope {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s linear;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.55) 52%, rgba(0, 0, 0, 0.92) 78%);
+}
+.cy-scope-h { position: absolute; left: 34%; right: 34%; top: 50%; height: 1px; background: rgba(255, 255, 255, 0.35); }
+.cy-scope-v { position: absolute; top: 34%; bottom: 34%; left: 50%; width: 1px; background: rgba(255, 255, 255, 0.35); }
+
+.cy-cine { position: absolute; inset: 0; pointer-events: none; }
+.cy-cine-bar {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 11vh;
+  background: #06080a;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cy-cine-bar.top { top: 0; transform: translateY(-100%); }
+.cy-cine-bar.bot { bottom: 0; transform: translateY(100%); }
+.cy-cine.on .cy-cine-bar.top,
+.cy-cine.on .cy-cine-bar.bot { transform: translateY(0); }
+
+@media (max-width: 720px) {
+  .cy-hint { display: none; }
+  .cy-qo { font-size: 15px; }
+  .cy-atk { left: auto; right: 20px; bottom: 220px; }
+  .cy-use { left: auto; right: 116px; bottom: 220px; }
+  .cy-dash { left: auto; right: 212px; bottom: 220px; }
+  .cy-jump { left: auto; right: 308px; bottom: 220px; }
+  .cy-arms { right: 14px; bottom: 116px; padding: 7px 12px 8px; }
+  .cy-an { font-size: 11px; }
+  .cy-aa { font-size: 14px; }
+  .cy-boss { top: 62px; width: 92vw; }
+}
+
+/* The way back to the beginning: quiet until it is wanted, then plain about it. */
+.cy-reset {
+  pointer-events: auto;
+  align-self: flex-start;
+  margin: 2px 0 0 4px;
+  padding: 6px 11px;
+  font: 500 11px/1 'EB Garamond', Georgia, serif;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: rgba(246, 236, 214, .6);
+  background: rgba(18, 16, 12, .55);
+  border: 1px solid rgba(214, 186, 122, .28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color .18s ease, border-color .18s ease, background .18s ease;
+}
+.cy-reset:hover { color: #f6ecd6; border-color: rgba(214, 186, 122, .6); }
+.cy-reset.arm {
+  color: #ffd9a0;
+  border-color: #ff8a4a;
+  background: rgba(66, 22, 12, .82);
+}

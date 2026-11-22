@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#05080f" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Monster Arena" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="https://media.base44.com/images/public/6ad27d6995813fb4230b1b65/d1b75cdc8_ElectricBlueArcaneRuneMedallion1.png" />
+    <title>Monster Arena</title>
+    <meta name="description" content="Monster Arena — a 3D action survival game with escalating waves of enemies, powerful glyph upgrades and multiplayer battles." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Monster Arena" />
+    <meta property="og:description" content="A 3D action survival game with escalating waves of enemies, powerful glyph upgrades and multiplayer battles." />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Monster Arena" />
+    <meta name="twitter:description" content="A 3D action survival game with escalating waves of enemies, powerful glyph upgrades and multiplayer battles." />
+
+    <!-- The announcements plate is painted by this bare document, before any
+         script or stylesheet has been fetched, so the corner it occupies is
+         never briefly empty on a refresh — the platform badge sits in exactly
+         that spot. The React panel replaces it the moment it mounts. -->
+    <style>
+      #bootAnn {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        z-index: 2147483647;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        width: min(236px, calc(100vw - 24px));
+        border-radius: 16px;
+        border: 1px solid rgba(252, 211, 77, 0.3);
+        background: linear-gradient(180deg, rgba(14, 11, 26, 0.96), rgba(6, 8, 16, 0.97));
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.72), 0 0 40px rgba(255, 160, 80, 0.18);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      #bootAnn .ba-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(252, 211, 77, 0.2);
+        background: linear-gradient(90deg, rgba(255, 170, 90, 0.16), rgba(120, 80, 220, 0.14));
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #fde68a;
+      }
+      #bootAnn .ba-dot {
+        margin-left: auto;
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #fcd34d;
+        box-shadow: 0 0 10px rgba(255, 190, 90, 0.8);
+        animation: ba-pulse 1.4s ease-in-out infinite;
+      }
+      #bootAnn .ba-body {
+        padding: 10px 12px;
+        font-size: 11.5px;
+        line-height: 1.45;
+        color: #94a3b8;
+      }
+      @keyframes ba-pulse {
+        0%, 100% { opacity: 0.35; }
+        50% { opacity: 1; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script>
+      // The game lives at "/" only. Anywhere else the page is a normal document
+      // and nothing takes the corner.
+      (function () {
+        if (location.pathname !== "/") return;
+
+        var el = document.createElement("div");
+        el.id = "bootAnn";
+        el.setAttribute("aria-hidden", "true");
+        el.innerHTML =
+          '<div class="ba-head"><span>📣 Announcements</span><span class="ba-dot"></span></div>' +
+          '<div class="ba-body">Loading the latest notes…</div>';
+        document.body.appendChild(el);
+
+        // The badge is injected at the top of the stack, so the plate also has
+        // to be last in the document: keep it there until the real panel is up.
+        var timer = setInterval(function () {
+          if (window.__arenaPanelReady) {
+            clearInterval(timer);
+            el.remove();
+            return;
+          }
+          if (el.parentNode !== document.body || document.body.lastElementChild !== el) {
+            document.body.appendChild(el);
+          }
+        }, 80);
+
+        // If the app never boots, do not leave the plate sitting there forever.
+        setTimeout(function () { clearInterval(timer); el.remove(); }, 20000);
+      })();
+    </script>
+
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

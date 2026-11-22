@@ -1,0 +1,91 @@
+{
+  "name": "VpnLocation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name of the server, e.g. London Edge"
+    },
+    "region": {
+      "type": "string",
+      "description": "Country or region shown under the name"
+    },
+    "serverId": {
+      "type": "string",
+      "description": "Identifier this server has in the operator's VPN control API"
+    },
+    "protocol": {
+      "type": "string",
+      "enum": [
+        "wireguard",
+        "openvpn"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
+      "default": "wireguard"
+    },
+    "endpointHost": {
+      "type": "string",
+      "description": "Public hostname or IP clients connect to"
+    },
+    "endpointPort": {
+      "type": "number",
+      "description": "UDP/TCP port the tunnel listens on"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "online",
+        "degraded",
+        "offline"
+      ],
+      "enumColors": [
+        "green",
+        "yellow",
+        "red"
+      ],
+      "default": "online"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal operator note, not shown to players"
+    }
+  },
+  "required": [
+    "name",
+    "serverId"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

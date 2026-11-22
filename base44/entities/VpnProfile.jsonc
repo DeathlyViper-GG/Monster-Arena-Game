@@ -1,0 +1,95 @@
+{
+  "name": "VpnProfile",
+  "type": "object",
+  "properties": {
+    "ownerId": {
+      "type": "string",
+      "description": "App user id this profile belongs to; set by the provisioning endpoint only"
+    },
+    "label": {
+      "type": "string",
+      "description": "Friendly device name, e.g. This laptop"
+    },
+    "locationId": {
+      "type": "string",
+      "description": "VpnLocation record id the profile was issued for"
+    },
+    "locationName": {
+      "type": "string",
+      "description": "Snapshot of the server name at issue time"
+    },
+    "protocol": {
+      "type": "string",
+      "enum": [
+        "wireguard",
+        "openvpn"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
+      "default": "wireguard"
+    },
+    "peerId": {
+      "type": "string",
+      "description": "Peer/device id on the VPN server, used to revoke it"
+    },
+    "publicKey": {
+      "type": "string",
+      "description": "Public half of the device keypair. The private key is never stored here."
+    },
+    "address": {
+      "type": "string",
+      "description": "Tunnel IP address assigned to the device"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "revoked"
+      ],
+      "enumColors": [
+        "green",
+        "gray"
+      ],
+      "default": "active"
+    },
+    "revokedReason": {
+      "type": "string",
+      "description": "Why the profile was revoked, if it was"
+    }
+  },
+  "required": [
+    "ownerId",
+    "locationId"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.ownerId": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

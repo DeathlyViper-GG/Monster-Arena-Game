@@ -1,0 +1,95 @@
+/* ===== FIRST-TIME GUIDED TOUR — spoken by DeathlyViper ===== */
+.tut-root {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+.tut-root.tut-dim::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 4, 9, .74);
+}
+
+/* the hole the player is being pointed at — a shadow, so clicks pass through */
+.tut-spot {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 9999px rgba(3, 4, 9, .74),
+    0 0 0 2px rgba(255, 62, 130, .95),
+    0 0 34px rgba(255, 62, 130, .6);
+  transition: left .22s ease, top .22s ease, width .22s ease, height .22s ease;
+}
+.tut-spot[hidden] { display: none; }
+
+.tut-card {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: min(600px, 94vw);
+  pointer-events: auto;
+  padding: 16px 18px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(18, 12, 30, .97), rgba(8, 6, 16, .98));
+  border: 1px solid rgba(200, 90, 255, .45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .7), 0 0 40px rgba(160, 60, 220, .26);
+  animation: tutIn .28s cubic-bezier(.2, 1, .3, 1);
+}
+@keyframes tutIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+/* training card sits above the touch buttons and the HUD row */
+.tut-card.tut-training { bottom: 104px; }
+
+/* the card never sits on top of the thing it is asking you to press */
+.tut-card.tut-top { top: 22px; bottom: auto; }
+
+.tut-who { display: flex; align-items: center; gap: 11px; margin-bottom: 9px; }
+.tut-ava {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 21px; line-height: 1; flex: 0 0 auto;
+  background: radial-gradient(circle at 35% 30%, #3a1450, #120a1e 70%);
+  border: 1px solid rgba(255, 90, 190, .65);
+  box-shadow: 0 0 16px rgba(255, 60, 160, .5), inset 0 0 12px rgba(255, 60, 160, .22);
+}
+.tut-name {
+  font-size: 13px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase;
+  background: linear-gradient(90deg, #ff7ae0, #c066ff 55%, #5ad2ff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.tut-step { font-size: 10px; letter-spacing: .12em; color: #9fd2ff; opacity: .8; margin-top: 2px; }
+
+.tut-text { margin: 0; font-size: 13.5px; line-height: 1.55; color: #e8e2ff; }
+
+.tut-actions { display: flex; gap: 9px; justify-content: flex-end; margin-top: 12px; }
+.tut-actions button {
+  cursor: pointer; border-radius: 10px; font-weight: 800; font-size: 12px;
+  letter-spacing: .08em; text-transform: uppercase; padding: 9px 15px;
+  transition: transform .15s ease, box-shadow .2s ease, filter .2s ease, border-color .2s ease;
+}
+.tut-skip { background: rgba(255, 255, 255, .06); border: 1px solid rgba(160, 140, 220, .45); color: #c9c2ee; }
+.tut-skip:hover { color: #fff; border-color: rgba(200, 150, 255, .9); }
+.tut-next {
+  background: linear-gradient(180deg, #3a1260, #1a0a30);
+  border: 1px solid rgba(255, 110, 200, .75); color: #ffe4fb;
+  box-shadow: 0 0 18px rgba(255, 60, 170, .38);
+}
+.tut-next:hover { transform: translateY(-1px); filter: brightness(1.12); box-shadow: 0 0 26px rgba(255, 60, 170, .62); }
+.tut-next[hidden] { display: none; }
+
+.tut-hint {
+  margin-top: 9px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
+  color: #ffb3e2; opacity: .92; text-align: right;
+}
+.tut-hint[hidden] { display: none; }
+
+@media (max-width: 760px) {
+  .tut-card { bottom: 88px; padding: 14px; }
+  .tut-text { font-size: 12.5px; }
+  .tut-ava { width: 36px; height: 36px; font-size: 18px; }
+}

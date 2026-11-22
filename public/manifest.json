@@ -1,0 +1,19 @@
+{
+  "name": "Monster Arena",
+  "short_name": "Monster Arena",
+  "description": "A 3D action survival game with escalating waves of enemies, powerful glyph upgrades and multiplayer battles.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05080f",
+  "theme_color": "#05080f",
+  "icons": [
+    {
+      "src": "https://media.base44.com/images/public/6ad27d6995813fb4230b1b65/d1b75cdc8_ElectricBlueArcaneRuneMedallion1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

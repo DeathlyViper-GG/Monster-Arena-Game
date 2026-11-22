@@ -1,0 +1,106 @@
+/* ============================================================
+   Main-menu corner framing — decorative brackets in the bottom-left
+   and bottom-right of the intro screen. They live inside #overlayIntro,
+   so they never show during a match. Purely visual: no pointer events,
+   painted beneath the menu card and side nav.
+   ============================================================ */
+
+.hud-corner {
+  position: fixed;
+  bottom: 0;
+  width: clamp(110px, 15vw, 200px);
+  height: clamp(110px, 15vw, 200px);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.9;
+  mix-blend-mode: screen;
+  contain: layout style paint;
+}
+.hud-corner--bl { left: 0; }
+.hud-corner--br { right: 0; transform: scaleX(-1); }
+
+/* long edge — sweeps in from the corner */
+.hud-corner::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 10px;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg,
+    rgba(122, 214, 255, 0.9),
+    rgba(160, 110, 255, 0.55) 46%,
+    rgba(160, 110, 255, 0));
+  box-shadow: 0 0 12px rgba(90, 210, 255, 0.55);
+  transform-origin: left center;
+  animation: hc-sweep 5.2s ease-in-out infinite;
+}
+
+/* upright edge */
+.hud-corner::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  bottom: 0;
+  width: 2px;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(0deg,
+    rgba(122, 214, 255, 0.9),
+    rgba(160, 110, 255, 0.5) 46%,
+    rgba(160, 110, 255, 0));
+  box-shadow: 0 0 12px rgba(90, 210, 255, 0.45);
+  transform-origin: center bottom;
+  animation: hc-sweep 5.2s ease-in-out 0.45s infinite;
+}
+
+/* inner echo — a warm, rounded inner bracket */
+.hud-corner span {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 46%;
+  height: 46%;
+  border-left: 1px solid rgba(255, 214, 160, 0.38);
+  border-bottom: 1px solid rgba(255, 214, 160, 0.38);
+  border-bottom-left-radius: 22px;
+  filter: drop-shadow(0 0 7px rgba(255, 190, 120, 0.35));
+}
+
+/* spark sitting in the elbow */
+.hud-corner i {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background: radial-gradient(circle, #eafcff 35%, rgba(120, 190, 255, 0.12) 100%);
+  box-shadow: 0 0 14px rgba(150, 210, 255, 0.9);
+  animation: hc-spark 3.6s ease-in-out infinite;
+}
+
+@keyframes hc-sweep {
+  0%, 100% { opacity: 0.45; filter: saturate(0.9); }
+  50%      { opacity: 1;    filter: saturate(1.25); }
+}
+
+@keyframes hc-spark {
+  0%, 100% { opacity: 0.55; transform: rotate(45deg) scale(0.85); }
+  50%      { opacity: 1;    transform: rotate(45deg) scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-corner::before,
+  .hud-corner::after,
+  .hud-corner i { animation: none; opacity: 0.7; }
+}
+
+@media (max-width: 900px) {
+  .hud-corner { width: clamp(88px, 26vw, 130px); height: clamp(88px, 26vw, 130px); opacity: 0.75; }
+  .hud-corner::before { bottom: 7px; }
+  .hud-corner::after { left: 7px; }
+  .hud-corner i { left: 13px; bottom: 13px; width: 6px; height: 6px; }
+}

@@ -1,0 +1,125 @@
+{
+  "name": "CustomLevel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Level title shown on the community board"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of the builder"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Builder's account email, used for the credit line"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "pve",
+        "pvp"
+      ],
+      "enumColors": [
+        "green",
+        "purple"
+      ],
+      "default": "pve",
+      "description": "pve runs the level's waves; pvp is a free-for-all arena dressed in the same map"
+    },
+    "theme_id": {
+      "type": "number",
+      "description": "Realm the map is dressed in: 1 Meadow, 2 Desert, 3 Ice Cavern, 4 Lava Pits, 5 Neon Void"
+    },
+    "wave_count": {
+      "type": "number",
+      "description": "How many waves the level runs before it is cleared"
+    },
+    "layout": {
+      "type": "object",
+      "description": "Map design: obstacles, buildings (with their storey height), loose chests and random chest generators, all in arena coordinates"
+    },
+    "waves": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "One entry per wave: { n, types: [monster kinds], boss: boss kind or null }"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "enumColors": [
+        "gray",
+        "yellow",
+        "green",
+        "red"
+      ],
+      "default": "pending",
+      "description": "draft is a builder's own work in progress and is never shown on the community board or in the review queue"
+    },
+    "review_note": {
+      "type": "string",
+      "description": "DeathlyViper's verdict note, shown to the builder"
+    },
+    "plays": {
+      "type": "number",
+      "default": 0,
+      "description": "How many times the level has been launched"
+    }
+  },
+  "required": [
+    "name",
+    "theme_id",
+    "wave_count"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.status": "approved"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "email": "akalexkar@outlook.com"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "email": "akalexkar@outlook.com"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "email": "akalexkar@outlook.com"
+          }
+        }
+      ]
+    }
+  }
+}

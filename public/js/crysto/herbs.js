@@ -35,6 +35,10 @@
   ];
 
   let built = false, glowMats = [];
+  const inventory = Object.create(null);
+  let food = 70;
+  const maxFood = 100;
+  let foodClock = 0;
   const list = [];
 
   function rng(seed) {
@@ -108,23 +112,82 @@
   H.tick = function (dt, player) {
     if (!built || !player) return;
     const now = performance.now() / 1000;
+    foodClock += dt;
+    if (foodClock >= 60) {
+      foodClock %= 60;
+      food = Math.max(0, food - 1);
+    }
     for (let i = 0; i < list.length; i++) {
       const h = list[i];
       if (!h.ready) {
         if (now >= h.at) { h.ready = true; h.group.visible = true; }
-        continue;
       }
-      const dx = player.x - h.x, dz = player.z - h.z;
-      if (dx * dx + dz * dz > 130 * 130) continue;
-      // nothing is picked from a full heart: it is left standing for later
-      if (player.hp >= player.maxHp) continue;
-      h.ready = false;
-      h.at = now + 80;
-      h.group.visible = false;
-      const gained = C.heal ? C.heal(h.heal) : 0;
-      if (gained > 0 && C.hud) C.hud.banner(h.name, '+' + gained + ' health');
     }
   };
 
+  H.target = function (player) {
+    if (!built || !player) return null;
+    let best = null, bestD = 140 * 140;
+    for (let i = 0; i < list.length; i++) {
+      const h = list[i];
+      if (!h.ready) continue;
+      const dx = player.x - h.x, dz = player.z - h.z;
+      const d = dx * dx + dz * dz;
+      if (d < bestD) { bestD = d; best = h; }
+    }
+    return best;
+  };
+
+  H.collect = function (player) {
+    const h = H.target(player);
+    if (!h) return false;
+    inventory[h.name] = (inventory[h.name] || 0) + 1;
+    h.ready = false;
+    h.at = performance.now() / 1000 + 80;
+    h.group.visible = false;
+    if (C.hud) {
+      C.hud.inventoryChanged(inventory, food, maxFood);
+      C.hud.banner(h.name + ' gathered', 'Added to your pack');
+    }
+    if (C.save) C.save.auto();
+    return true;
+  };
+
+  H.eat = function (name) {
+    if (!inventory[name]) return false;
+    inventory[name] -= 1;
+    if (!inventory[name]) delete inventory[name];
+    const values = { Bloodroot: 26, Hearthcap: 34, Mireweed: 42 };
+    const healingValues = { Bloodroot: 14, Hearthcap: 20, Mireweed: 26 };
+    food = Math.min(maxFood, food + (values[name] || 20));
+    const healing = C.heal ? C.heal(healingValues[name] || 8) : 0;
+    if (C.hud) {
+      C.hud.inventoryChanged(inventory, food, maxFood);
+      C.hud.banner('You eat ' + name, '+' + (values[name] || 20) + ' food' + (healing ? ' · +' + healing + ' health' : ''));
+    }
+    if (C.save) C.save.auto();
+    return true;
+  };
+
+  H.snapshot = function () {
+    return { inventory: Object.assign({}, inventory), food: food };
+  };
+
+  H.restore = function (data) {
+    Object.keys(inventory).forEach((name) => { delete inventory[name]; });
+    if (data && data.inventory) {
+      Object.keys(data.inventory).forEach((name) => {
+        const count = Math.floor(Number(data.inventory[name]));
+        if (KINDS.some((kind) => kind.name === name) && count > 0) inventory[name] = count;
+      });
+    }
+    if (data && data.food != null) food = Math.max(0, Math.min(maxFood, Number(data.food) || 0));
+    foodClock = 0;
+    if (C.hud) C.hud.inventoryChanged(inventory, food, maxFood);
+  };
+
   H.list = list;
+  H.inventory = inventory;
+  H.food = function () { return food; };
+  H.maxFood = maxFood;
 })();

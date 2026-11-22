@@ -35,6 +35,7 @@
     fog0 = null;
     sun0 = null;
     R.buildVillages(scene, colliders || []);
+    R.buildPaths(scene);
     R.buildCamps(scene);
     R.buildBroods(scene);
     R.people.build(scene);

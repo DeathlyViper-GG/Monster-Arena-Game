@@ -132,6 +132,7 @@
       state.elixirs = data.elixirs || {};
       state.healthUpgraded = !!data.healthUpgraded;
       if (data.maxHp && C.setMaxHp) C.setMaxHp(data.maxHp);
+      if (C.herbs && C.herbs.restore) C.herbs.restore(data.provisions);
       Object.keys(state.lit).forEach((id) => {
         const s = state.town.shrines[id];
         if (s) {

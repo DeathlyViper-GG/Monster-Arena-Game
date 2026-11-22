@@ -12,6 +12,7 @@
   C.wind = C.wind || { value: 0 };
 
   function clearAt(x, z) {
+    if (C.reach && C.reach.pathContains && C.reach.pathContains(x, z, 90)) return true;
     for (let i = 0; i < C.keepClear.length; i++) {
       const p = C.keepClear[i];
       const dx = x - p.x, dz = z - p.z;
@@ -446,6 +447,7 @@
         const h = C.height(x, z);
         if (h < 30 || h > 1200) continue;
         // Grass grows over the green but not through the roads or the houses.
+        if (C.reach && C.reach.pathContains && C.reach.pathContains(x, z, 50)) continue;
         let onBuild = false;
         const rc = C.roadClear || [];
         for (let k = 0; k < rc.length; k++) {

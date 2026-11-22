@@ -8,10 +8,28 @@
 
   const Q = {
     active: null, camps: {}, campsBroken: 0,
-    scout: 0, braziers: {}, braziersLit: 0, done: {}
+    scout: 0, braziers: {}, braziersLit: 0, delivery: 0, done: {}
   };
 
   const say = (n, lines, after) => C.hud.say(n.name, lines, after);
+  let questIcon = null;
+
+  function questIconTexture() {
+    if (questIcon) return questIcon;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(25,20,13,.78)';
+    ctx.beginPath(); ctx.arc(32, 32, 29, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#e8c98a'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = '#ffe4a8';
+    ctx.font = 'bold 42px Georgia, serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('!', 32, 31);
+    questIcon = new THREE.CanvasTexture(canvas);
+    if (THREE.sRGBEncoding !== undefined) questIcon.encoding = THREE.sRGBEncoding;
+    return questIcon;
+  }
 
   /* ---- who is where ------------------------------------------------------ */
   const NPCS = [
@@ -22,8 +40,15 @@
     },
     {
       id: 'marrow', name: 'Elder Marrow', x: -5785, z: 33165, faceX: -6000, faceZ: 33000,
+      questGiver: true,
       look: { height: 134, skin: 0xd9b189, cloth: 0x6a4a3a, trouser: 0x3a2f28, hair: 0xcfc6b4, hood: true, hoodColor: 0x5a4234 },
       talk: talkMarrow
+    },
+    {
+      id: 'bryn', name: 'Bryn the Roadwarden', x: -3520, z: 32880, faceX: -6000, faceZ: 33000,
+      questGiver: true,
+      look: { height: 132, skin: 0xc08a5c, cloth: 0x52654b, trouser: 0x34362f, hair: 0x5b4530, hood: true, hoodColor: 0x394838 },
+      talk: talkRoadwarden
     },
     {
       id: 'tamsin', name: 'Tamsin', x: -6300, z: 32880, faceX: -6000, faceZ: 33000,
@@ -32,6 +57,7 @@
     },
     {
       id: 'orla', name: 'Orla the Woodcutter', x: -14770, z: 39850, faceX: -15000, faceZ: 40000,
+      questGiver: true,
       look: { height: 130, skin: 0xc08a5c, cloth: 0x3f6b58, trouser: 0x2b3a30, hair: 0x8a6a44 },
       talk: talkOrla
     },
@@ -47,6 +73,7 @@
     },
     {
       id: 'kaelen', name: 'Kaelen the Smith', x: 2250, z: 46140, faceX: 2000, faceZ: 46000,
+      questGiver: true,
       look: { height: 138, skin: 0x6f4a30, cloth: 0x8a4a4a, trouser: 0x2f2a24, hair: 0x1e1a18 },
       talk: talkKaelen
     },
@@ -153,7 +180,44 @@
     ]);
   }
 
+  function talkRoadwarden(n) {
+    if (Q.delivery === 3) {
+      say(n, ['The road is in good hands, traveller. Keep the Reach moving.']);
+      return;
+    }
+    if (Q.delivery === 2) {
+      say(n, ['Elder Marrow has the dispatch? Then here is your roadwarder’s fee.'], () => {
+        Q.delivery = 3;
+        C.reward(90);
+        C.hud.banner('Roadwarder’s Dispatch', 'The message is safely delivered');
+        R.save();
+      });
+      return;
+    }
+    if (Q.delivery === 1) {
+      say(n, ['The dispatch is for Elder Marrow in Ashfall. Follow the packed-earth road south-west.']);
+      return;
+    }
+    say(n, [
+      'I keep the Shore Road passable, but I cannot leave my post.',
+      'Take this dispatch to Elder Marrow in Ashfall. The road is marked all the way to the village.',
+      'Bring back word that it reached his hands, and I will pay you for the miles.'
+    ], () => {
+      Q.delivery = 1;
+      C.hud.banner('Roadwarder’s Dispatch', 'Deliver the message to Elder Marrow');
+      R.save();
+    });
+  }
+
   function talkMarrow(n) {
+    if (Q.delivery === 1) {
+      say(n, ['A dispatch from Bryn? Good. The road is still open, then. Tell him the message is safely in my hands.'], () => {
+        Q.delivery = 2;
+        C.hud.banner('Dispatch delivered', 'Return to Bryn on the Shore Road');
+        R.save();
+      });
+      return;
+    }
     if (Q.done.matriarch) {
       say(n, ['The crown is quiet, and the Reach is ours again. Whatever you are, traveller, you have done more here than any of us could.']);
       return;
@@ -309,6 +373,14 @@
         const who = C.npc.make(n.look);
         who.place(n.x, n.z);
         who.faceTo(n.faceX, n.faceZ);
+        if (n.questGiver) {
+          const icon = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: questIconTexture(), transparent: true, depthWrite: false
+          }));
+          icon.scale.set(48, 48, 1);
+          icon.position.y = n.look.height + 70;
+          who.group.add(icon);
+        }
         scene.add(who.group);
         n.npc = who;
       });
@@ -342,6 +414,12 @@
     },
 
     tracker() {
+      if (Q.delivery === 1) {
+        return { title: 'Roadwarder’s Dispatch', objective: 'Deliver the message to Elder Marrow', target: npcPos('marrow') };
+      }
+      if (Q.delivery === 2) {
+        return { title: 'Roadwarder’s Dispatch', objective: 'Return to Bryn on the Shore Road', target: npcPos('bryn') };
+      }
       if (Q.done.matriarch) {
         return {
           title: 'The Hollow Reach',
@@ -429,6 +507,7 @@
       Q.camps = q.camps || {};
       Q.campsBroken = q.campsBroken || Object.keys(Q.camps).length;
       Q.scout = q.scout || 0;
+      Q.delivery = q.delivery || 0;
       Q.braziers = q.braziers || {};
       Q.braziersLit = q.braziersLit || Object.keys(Q.braziers).length;
       Q.done = q.done || {};

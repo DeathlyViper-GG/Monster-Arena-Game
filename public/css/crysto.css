@@ -475,3 +475,114 @@
   border-color: #ff8a4a;
   background: rgba(66, 22, 12, .82);
 }
+
+/* Kingdom map and field pack: quiet parchment controls, only interactive
+   while open so the world keeps all of its normal pointer controls. */
+.cy-world-tools {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+.cy-tool-button, .cy-panel-close, .cy-pack-eat {
+  color: #f3e7c9;
+  font: 600 12px/1 'Cinzel', Georgia, serif;
+  letter-spacing: .08em;
+  background: linear-gradient(180deg, rgba(39, 49, 35, .92), rgba(15, 22, 16, .96));
+  border: 1px solid rgba(214, 178, 106, .52);
+  border-radius: 8px;
+  padding: 10px 13px;
+  cursor: pointer;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .32);
+}
+.cy-tool-button:hover, .cy-panel-close:hover, .cy-pack-eat:hover {
+  border-color: #f3cf83;
+  background: rgba(74, 91, 56, .96);
+}
+.cy-map-panel, .cy-inventory-panel {
+  position: absolute;
+  top: 68px;
+  right: 18px;
+  width: min(760px, calc(100vw - 36px));
+  padding: 14px;
+  border: 1px solid rgba(214, 178, 106, .68);
+  border-radius: 14px;
+  background: linear-gradient(155deg, rgba(30, 34, 24, .97), rgba(10, 14, 11, .98));
+  box-shadow: 0 18px 54px rgba(0, 0, 0, .68), inset 0 0 26px rgba(214, 178, 106, .06);
+  pointer-events: auto;
+  display: none;
+}
+.cy-map-panel.on, .cy-inventory-panel.on { display: block; }
+.cy-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.cy-panel-title {
+  color: #edcf8e;
+  font: 700 14px/1.2 'Cinzel', Georgia, serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.cy-panel-close { padding: 7px 10px; }
+.cy-map-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid rgba(241, 220, 174, .52);
+  border-radius: 8px;
+  background: #c6b789;
+  box-shadow: inset 0 0 20px rgba(52, 39, 23, .3);
+}
+.cy-map-legend {
+  padding: 9px 3px 1px;
+  color: #d7ceb1;
+  font-size: 13px;
+  text-align: center;
+  letter-spacing: .035em;
+}
+.cy-inventory-panel { width: min(390px, calc(100vw - 36px)); }
+.cy-food-track {
+  height: 13px;
+  margin: 12px 0 5px;
+  overflow: hidden;
+  border: 1px solid rgba(214, 178, 106, .45);
+  border-radius: 99px;
+  background: rgba(0, 0, 0, .48);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, .6);
+}
+.cy-food-fill {
+  display: block;
+  width: 70%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #9b7234, #efd58a);
+  transition: width .25s ease;
+}
+.cy-food-track.low .cy-food-fill { background: linear-gradient(90deg, #8e3b2b, #e7864f); }
+.cy-food-text { display: block; color: #cfc5a9; font-size: 13px; }
+.cy-inventory-list { margin-top: 12px; }
+.cy-pack-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 2px;
+  border-top: 1px solid rgba(214, 178, 106, .2);
+}
+.cy-pack-name { color: #f3e7c9; font-size: 15px; }
+.cy-pack-eat { padding: 7px 12px; }
+.cy-pack-empty { padding: 12px 2px; color: #cfc5a9; font-size: 15px; }
+.cy-hp.low + .cy-food-track { opacity: .8; }
+
+@media (max-width: 720px) {
+  .cy-world-tools { top: 12px; right: 12px; gap: 5px; }
+  .cy-tool-button { padding: 8px 9px; font-size: 10px; }
+  .cy-map-panel, .cy-inventory-panel { top: 56px; right: 10px; width: calc(100vw - 20px); padding: 9px; }
+  .cy-map-legend { font-size: 11px; }
+  .cy-panel-title { font-size: 12px; }
+}

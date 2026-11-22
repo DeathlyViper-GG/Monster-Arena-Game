@@ -30,6 +30,211 @@
     }
   ];
 
+  R.PATHS = [
+    {
+      name: 'Root Shrine Trail',
+      points: [
+        { x: -540, z: 620 }, { x: -1450, z: 820 }, { x: -3180, z: 1240 },
+        { x: -4820, z: 1950 }, { x: -6200, z: 2900 }
+      ]
+    },
+    {
+      name: 'Tide Shrine Trail',
+      points: [
+        { x: 0, z: 820 }, { x: -720, z: 2280 }, { x: -1500, z: 4600 },
+        { x: -2440, z: 7200 }, { x: -3200, z: 10080 }
+      ]
+    },
+    {
+      name: 'Keep Road',
+      points: [
+        { x: 3400, z: -520 }, { x: 3650, z: -1700 }, { x: 4300, z: -3000 },
+        { x: 5050, z: -4100 }, { x: 6000, z: -5100 }
+      ]
+    },
+    {
+      name: 'Ember Shrine Spur',
+      points: [
+        { x: 5050, z: -4100 }, { x: 5600, z: -4120 }, { x: 6100, z: -4130 },
+        { x: 6400, z: -3900 }
+      ]
+    },
+    {
+      name: 'The Shore Road',
+      points: [
+        { x: 0, z: 31120 }, { x: -380, z: 31640 }, { x: -1240, z: 32020 },
+        { x: -2250, z: 32400 }, { x: -3420, z: 32750 }, { x: -4740, z: 33050 },
+        { x: -6900, z: 33100 }
+      ]
+    },
+    {
+      name: 'The Old Pine Road',
+      points: [
+        { x: -6900, z: 33100 }, { x: -7900, z: 33700 }, { x: -9100, z: 34600 },
+        { x: -9440, z: 35550 }, { x: -10850, z: 36900 }, { x: -12100, z: 38300 },
+        { x: -13700, z: 39500 }, { x: -15800, z: 40100 }
+      ]
+    },
+    {
+      name: 'The Reed Track',
+      points: [
+        { x: -15100, z: 40100 }, { x: -14020, z: 40900 }, { x: -13050, z: 41650 },
+        { x: -12000, z: 42000 }, { x: -12800, z: 43050 }, { x: -13900, z: 44000 }
+      ]
+    },
+    {
+      name: 'The Cinder Road',
+      points: [
+        { x: -6900, z: 33100 }, { x: -4200, z: 34400 }, { x: -2150, z: 35900 },
+        { x: 300, z: 37400 }, { x: 2420, z: 39100 }, { x: 4100, z: 41150 },
+        { x: 2800, z: 43500 }, { x: 2000, z: 44900 }
+      ]
+    },
+    {
+      name: 'The Crown Way',
+      points: [
+        { x: 2000, z: 44900 }, { x: 3800, z: 46800 }, { x: 5550, z: 47800 },
+        { x: 6800, z: 48950 }, { x: 8200, z: 50400 }, { x: 10400, z: 50150 },
+        { x: 12000, z: 48000 }
+      ]
+    },
+    {
+      name: 'Pine Stalkers’ Track',
+      points: [
+        { x: -6900, z: 33100 }, { x: -9100, z: 33600 }, { x: -12800, z: 34100 },
+        { x: -15900, z: 34600 }, { x: -18000, z: 35000 }
+      ]
+    },
+    {
+      name: 'Shore Raiders’ Spur',
+      points: [
+        { x: -2150, z: 35900 }, { x: -2100, z: 36500 }, { x: -2000, z: 37000 }
+      ]
+    },
+    {
+      name: 'Ember Warband Spur',
+      points: [
+        { x: 4100, z: 41150 }, { x: 5600, z: 40500 }, { x: 7300, z: 40200 },
+        { x: 9000, z: 40000 }
+      ]
+    }
+  ];
+
+  const PATH_CELL = 1000, PATH_MARGIN = 220;
+  const pathIndex = Object.create(null);
+  R.PATHS.forEach((route) => {
+    for (let i = 0; i < route.points.length - 1; i++) {
+      const a = route.points[i], b = route.points[i + 1];
+      const segment = {
+        a: a, dx: b.x - a.x, dz: b.z - a.z,
+        length2: (b.x - a.x) * (b.x - a.x) + (b.z - a.z) * (b.z - a.z)
+      };
+      const minX = Math.floor((Math.min(a.x, b.x) - PATH_MARGIN) / PATH_CELL);
+      const maxX = Math.floor((Math.max(a.x, b.x) + PATH_MARGIN) / PATH_CELL);
+      const minZ = Math.floor((Math.min(a.z, b.z) - PATH_MARGIN) / PATH_CELL);
+      const maxZ = Math.floor((Math.max(a.z, b.z) + PATH_MARGIN) / PATH_CELL);
+      for (let x = minX; x <= maxX; x++) {
+        for (let z = minZ; z <= maxZ; z++) {
+          const key = x + ',' + z;
+          if (!pathIndex[key]) pathIndex[key] = [];
+          pathIndex[key].push(segment);
+        }
+      }
+    }
+  });
+
+  function roadTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#765d43';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 1700; i++) {
+      const shade = Math.random();
+      ctx.fillStyle = shade > 0.5
+        ? 'rgba(204,177,132,' + (0.04 + shade * 0.12) + ')'
+        : 'rgba(35,29,23,' + (0.04 + (1 - shade) * 0.14) + ')';
+      ctx.beginPath();
+      ctx.ellipse(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 3, 0.8 + Math.random() * 1.8, Math.random() * 3.14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(48,36,26,.22)';
+    ctx.lineWidth = 5;
+    [68, 188].forEach((x) => {
+      ctx.beginPath();
+      ctx.moveTo(x, 0); ctx.lineTo(x + 4, 256);
+      ctx.stroke();
+    });
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = 4;
+    if (THREE.sRGBEncoding !== undefined) texture.encoding = THREE.sRGBEncoding;
+    return texture;
+  }
+
+  function makeRoad(points, width, material) {
+    const samples = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i], b = points[i + 1];
+      const length = Math.hypot(b.x - a.x, b.z - a.z);
+      const n = Math.max(1, Math.ceil(length / 180));
+      for (let j = 0; j < n; j++) {
+        const t = j / n;
+        samples.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
+      }
+    }
+    samples.push(points[points.length - 1]);
+    const positions = [], uvs = [], indices = [];
+    let distance = 0;
+    samples.forEach((point, i) => {
+      const before = samples[Math.max(0, i - 1)];
+      const after = samples[Math.min(samples.length - 1, i + 1)];
+      let dx = after.x - before.x, dz = after.z - before.z;
+      const length = Math.hypot(dx, dz) || 1;
+      dx /= length; dz /= length;
+      const half = width / 2, nx = -dz, nz = dx;
+      const left = { x: point.x - nx * half, z: point.z - nz * half };
+      const right = { x: point.x + nx * half, z: point.z + nz * half };
+      if (i) distance += Math.hypot(point.x - before.x, point.z - before.z);
+      positions.push(left.x, C.height(left.x, left.z) + 5, left.z);
+      positions.push(right.x, C.height(right.x, right.z) + 5, right.z);
+      uvs.push(0, distance / 210, 1, distance / 210);
+      if (i < samples.length - 1) {
+        const k = i * 2;
+        indices.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+      }
+    });
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  R.pathContains = function (x, z, padding) {
+    const radius = 77 + (padding || 0);
+    const radius2 = radius * radius;
+    const segments = pathIndex[Math.floor(x / PATH_CELL) + ',' + Math.floor(z / PATH_CELL)] || [];
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      const t = Math.max(0, Math.min(1, ((x - segment.a.x) * segment.dx + (z - segment.a.z) * segment.dz) / segment.length2));
+      const ox = x - segment.a.x - segment.dx * t;
+      const oz = z - segment.a.z - segment.dz * t;
+      if (ox * ox + oz * oz < radius2) return true;
+    }
+    return false;
+  };
+
+  R.buildPaths = function (scene) {
+    const material = new THREE.MeshStandardMaterial({
+      map: roadTexture(), color: 0xc2a27b, roughness: 0.98, metalness: 0
+    });
+    R.PATHS.forEach((path) => scene.add(makeRoad(path.points, 154, material)));
+  };
+
   /* ---- a pole with a torn cloth: the colours of whoever holds this ground -- */
   function banner(x, z, colour) {
     const g = new THREE.Group();

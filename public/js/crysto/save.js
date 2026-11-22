@@ -21,6 +21,7 @@
         healthUpgraded: !!q.healthUpgraded,
         maxHp: C.player ? C.player().maxHp : 100,
         arms: C.weapons ? C.weapons.snapshot() : null,
+        provisions: C.herbs ? C.herbs.snapshot() : null,
         at: Date.now()
       };
       try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) {}

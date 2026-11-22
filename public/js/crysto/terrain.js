@@ -296,10 +296,9 @@
     const water = new THREE.Mesh(
       new THREE.PlaneGeometry(160000, 160000),
       new THREE.MeshStandardMaterial({
-        color: 0x1d4e6b, roughness: 0.09, metalness: 0.78,
-        normalMap: rippleNormal(), normalScale: new THREE.Vector2(1.15, 1.15),
-        envMap: skyCube(), envMapIntensity: 1.35,
-        transparent: true, opacity: 0.95
+        color: 0x24576a, roughness: 0.16, metalness: 0.025,
+        normalMap: rippleNormal(), normalScale: new THREE.Vector2(0.82, 0.82),
+        envMap: skyCube(), envMapIntensity: 0.9
       })
     );
     water.rotation.x = -Math.PI / 2;
@@ -377,6 +376,13 @@
         const beside = (i % cols) + 1 < cols ? hs[i + 1] : C.height(wx + 40, wz);
         const sl = Math.abs(beside - h) / 40;
         const c = C.colorAt(wx, wz, h, sl);
+        // A damp sand-and-silt margin where the land meets the water.
+        const beach = C.clamp01((58 - h) / 42) * C.clamp01(h / 8);
+        if (beach > 0) {
+          c[0] += (0.56 - c[0]) * beach;
+          c[1] += (0.49 - c[1]) * beach;
+          c[2] += (0.34 - c[2]) * beach;
+        }
         col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
       }
       pos.needsUpdate = true;

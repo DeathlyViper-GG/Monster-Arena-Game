@@ -148,7 +148,7 @@
   }
 
   function movePlayer(dt) {
-    if (frozen) { P.mx = 0; P.mz = 0; return; }
+    if (frozen || (C.hud && C.hud.overlaysOpen)) { P.mx = 0; P.mz = 0; return; }
     let mx = 0, mz = 0;
     const f = { x: -Math.sin(camYaw), z: -Math.cos(camYaw) };
     const r = { x: Math.cos(camYaw), z: -Math.sin(camYaw) };
@@ -318,14 +318,17 @@
     terrain.update(P.x, P.z, 5);
     terrain.follow(P.x, P.y, P.z);
     terrain.tick(t / 1000);
-    if (C.damageTick) C.damageTick(dt);
-    C.quest.tick(dt, P);
-    if (C.reach) C.reach.tick(dt, P);
-    if (C.herbs) C.herbs.tick(dt, P);
-    if (C.shrine && C.shrine.tick) C.shrine.tick(dt, P);
+    const worldPaused = C.hud && C.hud.overlaysOpen;
+    if (!worldPaused) {
+      if (C.damageTick) C.damageTick(dt);
+      C.quest.tick(dt, P);
+      if (C.reach) C.reach.tick(dt, P);
+      if (C.herbs) C.herbs.tick(dt, P);
+      if (C.shrine && C.shrine.tick) C.shrine.tick(dt, P);
+    }
 
     // The vigil saves itself as you go: never back to the pod.
-    saveAcc += dt;
+    if (!worldPaused) saveAcc += dt;
     if (saveAcc > 24) { saveAcc = 0; if (C.save) C.save.auto(); }
 
     uiT += dt;
@@ -345,10 +348,17 @@
       C.hud.setQuest(q.title, q.objective, dist);
       C.hud.setCompass(angle, dist == null ? 0 : dist);
       C.hud.setHearts(P.hp, P.maxHp);
+      C.hud.setFood(C.herbs ? C.herbs.food() : 0, C.herbs ? C.herbs.maxFood : 100);
 
       const t2 = (C.reach && C.reach.target(P)) || C.quest.target(P);
       let label = t2 && t2.run ? t2.label : null;
       if (C.shrine && C.shrine.prompt) label = C.shrine.prompt(P) || label;
+      let gather = null;
+      if (!label && C.herbs) {
+        gather = C.herbs.target(P);
+        if (gather) label = '[T] Collect ' + gather.name;
+      }
+      C.hud.updateWorld(P, q.target, !!gather);
       if (label !== lastPrompt) {
         lastPrompt = label;
         C.hud.prompt(label);
@@ -379,6 +389,11 @@
   function onKey(e, down) {
     const k = String(e.key || '').toLowerCase();
     if (k === 'escape' && down) {
+      if (C.hud.overlaysOpen) {
+        C.hud.toggleMap(false);
+        C.hud.toggleInventory(false);
+        return;
+      }
       // The browser lets the pointer go on Escape by itself; a press with the
       // cursor already free leaves the vale.
       if (document.pointerLockElement === canvas) return;
@@ -390,9 +405,13 @@
       if (down) e.preventDefault();
     }
     if (!down) return;
+    if (C.hud.overlaysOpen && k !== 'm' && k !== 'i') return;
     if (k === 'shift') { e.preventDefault(); dash(); return; }
     if (k === 'q') { if (C.weapons) C.weapons.cycle(); return; }
     if (k === 'r') { if (C.weapons) C.weapons.reload(); return; }
+    if (k === 'm') { e.preventDefault(); C.hud.toggleMap(); return; }
+    if (k === 'i') { e.preventDefault(); C.hud.toggleInventory(); return; }
+    if (k === 't') { e.preventDefault(); if (C.herbs) C.herbs.collect(P); return; }
     if (k === ' ') {
       e.preventDefault();
       if (C.hud.talking) { C.hud.advance(); return; }
@@ -427,7 +446,7 @@
 
   // A real control keeps its own press; everything else in the world takes it.
   function onControl(t) {
-    return !!(t && t.closest && t.closest('button, input, textarea, select, a, .cy-dialogue.on, .cy-choose.on'));
+    return !!(t && t.closest && t.closest('button, input, textarea, select, a, .cy-dialogue.on, .cy-choose.on, .cy-map-panel.on, .cy-inventory-panel.on'));
   }
 
   // The arena's lock, made to stick: any lock another view left behind (the
@@ -609,6 +628,7 @@
   };
   C.onAttack = attack;
   C.onUse = interact;
+  C.onCollect = function () { if (C.herbs) C.herbs.collect(P); };
   C.onDash = dash;
   C.dashing = function () { return dashT > 0; };
   C.onJump = function () { if (P.onGround) { P.vy = JUMP; P.onGround = false; } };
@@ -689,6 +709,9 @@
 
     C.hud.build();
     C.hud.show();
+    C.hud.toggleMap(false);
+    C.hud.toggleInventory(false);
+    if (C.herbs) C.hud.inventoryChanged(C.herbs.inventory, C.herbs.food(), C.herbs.maxFood);
     paintCursor();
     C.hud.setHearts(P.hp, P.maxHp);
     C.quest.init(scene, town);
@@ -715,6 +738,7 @@
       }
       wokeUp = true;
     }
+    if (C.herbs) C.hud.inventoryChanged(C.herbs.inventory, C.herbs.food(), C.herbs.maxFood);
 
     // The ring is streamed in nearest-first while the arrival plays, instead of
     // freezing the page while all twenty-five tiles are shaped at once.

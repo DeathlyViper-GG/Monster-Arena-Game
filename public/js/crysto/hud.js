@@ -6,6 +6,7 @@
   let root = null;
   let lines = [], lineIdx = 0, after = null, typingTimer = null, typingText = '';
   let bannerTimer = null;
+  let mapUpdateAt = 0;
 
   function el(tag, cls, text) {
     const n = document.createElement(tag);
@@ -68,6 +69,47 @@
     els.compass.appendChild(els.needle);
     els.compass.appendChild(els.cDist);
     root.appendChild(els.compass);
+
+    const worldTools = el('div', 'cy-world-tools');
+    els.mapButton = el('button', 'cy-tool-button', 'MAP  [M]');
+    els.packButton = el('button', 'cy-tool-button', 'PACK  [I]');
+    els.mapButton.type = 'button';
+    els.packButton.type = 'button';
+    worldTools.appendChild(els.mapButton);
+    worldTools.appendChild(els.packButton);
+    root.appendChild(worldTools);
+
+    els.mapPanel = el('section', 'cy-map-panel');
+    const mapHead = el('div', 'cy-panel-head');
+    mapHead.appendChild(el('div', 'cy-panel-title', 'The Kingdom of Crysto'));
+    els.mapClose = el('button', 'cy-panel-close', 'Close  [M]');
+    els.mapClose.type = 'button';
+    mapHead.appendChild(els.mapClose);
+    els.mapPanel.appendChild(mapHead);
+    els.mapCanvas = el('canvas', 'cy-map-canvas');
+    els.mapCanvas.width = 900;
+    els.mapCanvas.height = 600;
+    els.mapCanvas.setAttribute('aria-label', 'Map of Crysto showing towns, roads, forests, shrines and monster camps');
+    els.mapPanel.appendChild(els.mapCanvas);
+    els.mapPanel.appendChild(el('div', 'cy-map-legend', '◆ You　● Village　✦ Shrine　△ Monster camp　— Road'));
+    root.appendChild(els.mapPanel);
+
+    els.inventoryPanel = el('section', 'cy-inventory-panel');
+    const packHead = el('div', 'cy-panel-head');
+    packHead.appendChild(el('div', 'cy-panel-title', 'Field Pack'));
+    els.packClose = el('button', 'cy-panel-close', 'Close  [I]');
+    els.packClose.type = 'button';
+    packHead.appendChild(els.packClose);
+    els.inventoryPanel.appendChild(packHead);
+    els.foodTrack = el('div', 'cy-food-track');
+    els.foodFill = el('i', 'cy-food-fill');
+    els.foodTrack.appendChild(els.foodFill);
+    els.foodText = el('span', 'cy-food-text', 'Food 70 / 100');
+    els.inventoryPanel.appendChild(els.foodTrack);
+    els.inventoryPanel.appendChild(els.foodText);
+    els.inventoryList = el('div', 'cy-inventory-list');
+    els.inventoryPanel.appendChild(els.inventoryList);
+    root.appendChild(els.inventoryPanel);
 
     // the aim point, and the bars a film played inside the world wears
     els.cross = el('div', 'cy-cross');
@@ -133,7 +175,7 @@
     root.appendChild(els.save);
 
     els.hint = el('div', 'cy-hint',
-      'WASD move · Shift dash · Space jump · click to strike · right-click to aim · Q swap arms · R reload · E to act · Esc to leave Crysto');
+      'WASD move · Shift dash · Space jump · click strike · right-click aim · Q swap · R reload · E talk / act · T gather · M map · I pack · Esc leave');
     root.appendChild(els.hint);
 
     // ---- hands ----
@@ -162,9 +204,17 @@
     document.body.appendChild(root);
     wireStick();
     els.atk.addEventListener('click', (e) => { e.stopPropagation(); if (C.onAttack) C.onAttack(); });
-    els.use.addEventListener('click', (e) => { e.stopPropagation(); if (C.onUse) C.onUse(); });
+    els.use.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (els.use.dataset.collect === 'true' && C.onCollect) C.onCollect();
+      else if (C.onUse) C.onUse();
+    });
     els.dash.addEventListener('click', (e) => { e.stopPropagation(); if (C.onDash) C.onDash(); });
     els.jump.addEventListener('click', (e) => { e.stopPropagation(); if (C.onJump) C.onJump(); });
+    els.mapButton.addEventListener('click', (e) => { e.stopPropagation(); hud.toggleMap(); });
+    els.packButton.addEventListener('click', (e) => { e.stopPropagation(); hud.toggleInventory(); });
+    els.mapClose.addEventListener('click', (e) => { e.stopPropagation(); hud.toggleMap(false); });
+    els.packClose.addEventListener('click', (e) => { e.stopPropagation(); hud.toggleInventory(false); });
     return root;
   }
 
@@ -233,6 +283,207 @@
     c.innerHTML = h;
   }
 
+  const MAP = { minX: -22000, maxX: 18000, minZ: -6000, maxZ: 54000 };
+  function mapPoint(x, z) {
+    return {
+      x: (x - MAP.minX) / (MAP.maxX - MAP.minX) * els.mapCanvas.width,
+      y: (MAP.maxZ - z) / (MAP.maxZ - MAP.minZ) * els.mapCanvas.height
+    };
+  }
+
+  function drawMap(player, target) {
+    const canvas = els.mapCanvas, ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const p = (x, z) => mapPoint(x, z);
+    ctx.clearRect(0, 0, w, h);
+    const paper = ctx.createLinearGradient(0, 0, w, h);
+    paper.addColorStop(0, '#d7c79d');
+    paper.addColorStop(0.52, '#c6b789');
+    paper.addColorStop(1, '#a99568');
+    ctx.fillStyle = paper;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = '#584b34';
+    for (let i = 0; i < 180; i++) {
+      const x = (i * 197 + 31) % w, y = (i * 113 + 17) % h;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 1 + (i % 3), 0.7, i * 0.19, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    const land = (points, fill) => {
+      ctx.beginPath();
+      points.forEach((v, i) => {
+        const q = p(v[0], v[1]);
+        if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(77,68,46,.65)';
+      ctx.stroke();
+    };
+    land([
+      [-20000, -5000], [-17000, -1100], [-13000, 700], [-9000, 1100], [-6000, 900],
+      [-2500, 2400], [1000, 1900], [5000, 500], [9000, -900], [13000, -2200],
+      [16000, -5000]
+    ], '#86906b');
+    land([
+      [-14000, 24000], [-9500, 25500], [-5200, 26800], [-2000, 28500], [1800, 28100],
+      [4200, 29100], [7300, 30300], [10500, 32200], [14200, 35000], [16000, 39000],
+      [14000, 42500], [15500, 45800], [11200, 50000], [6000, 53500], [1500, 51700],
+      [-3500, 52800], [-7200, 50000], [-9600, 47600], [-13000, 45300], [-17900, 42900],
+      [-20400, 39700], [-19800, 36000], [-18000, 33200], [-16000, 28800]
+    ], '#827d66');
+
+    const region = (x, z, rx, rz, color) => {
+      const q = p(x, z);
+      ctx.save();
+      ctx.globalAlpha = 0.38;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.ellipse(q.x, q.y, rx / (MAP.maxX - MAP.minX) * w, rz / (MAP.maxZ - MAP.minZ) * h, -0.22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+    region(-12500, 39900, 5200, 8000, '#344c35');
+    region(-11100, 44600, 4300, 5200, '#667e6b');
+    region(8000, 40800, 5700, 7200, '#9a6247');
+    region(8500, 49000, 4800, 5800, '#c4bca7');
+    region(-1000, 32200, 10500, 4300, '#b28b66');
+    region(-11800, 45300, 4000, 3000, '#777c80');
+
+    // The Sable and its banks.
+    ctx.beginPath();
+    for (let i = 0; i <= 45; i++) {
+      const z = -5000 + i * 420;
+      const x = -5200 + Math.sin(z * 0.00035) * 1100;
+      const q = p(x, z);
+      if (!i) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y);
+    }
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(75,117,127,.56)';
+    ctx.stroke();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(57,106,124,.9)';
+    ctx.stroke();
+
+    // Fine, broken contour lines give the parchment some relief without
+    // introducing image downloads or additional rendering work.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(58,61,44,.20)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+      const center = p(-6000 + i * 2400, 39000 + (i % 3) * 1800);
+      ctx.beginPath();
+      ctx.ellipse(center.x, center.y, 100 + i * 5, 28 + i * 4, -0.35, 0.2, Math.PI * 1.8);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // The actual Reach roads use the same point list as the 3D dirt tracks.
+    (C.reach && C.reach.PATHS || []).forEach((route) => {
+      ctx.beginPath();
+      route.points.forEach((v, i) => {
+        const q = p(v.x, v.z);
+        if (i) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y);
+      });
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = 'rgba(72,49,32,.78)';
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(224,195,139,.8)';
+      ctx.stroke();
+    });
+
+    const label = (text, x, z, size, color) => {
+      const q = p(x, z);
+      ctx.font = (size || 15) + 'px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(221,207,166,.8)';
+      ctx.strokeText(text, q.x, q.y);
+      ctx.fillStyle = color || '#3f3928';
+      ctx.fillText(text, q.x, q.y);
+    };
+    const marker = (x, z, text, kind) => {
+      const q = p(x, z);
+      ctx.beginPath();
+      if (kind === 'shrine') {
+        ctx.moveTo(q.x, q.y - 7); ctx.lineTo(q.x + 7, q.y); ctx.lineTo(q.x, q.y + 7); ctx.lineTo(q.x - 7, q.y); ctx.closePath();
+        ctx.fillStyle = '#e2b85b';
+      } else if (kind === 'camp') {
+        ctx.moveTo(q.x, q.y - 7); ctx.lineTo(q.x + 7, q.y + 6); ctx.lineTo(q.x - 7, q.y + 6); ctx.closePath();
+        ctx.fillStyle = '#853e31';
+      } else {
+        ctx.arc(q.x, q.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#563f2d';
+      }
+      ctx.fill();
+      ctx.strokeStyle = '#efe2bd';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      label(text, q.x === 0 ? x + 250 : x, z - 620, 13);
+    };
+
+    // Forest marks are deterministic and kept off the roads and settlements.
+    for (let i = 0; i < 90; i++) {
+      const x = -17400 + ((i * 7919) % 31000);
+      const z = 35600 + ((i * 3571) % 13500);
+      if (x > 5000 && z < 43500) continue;
+      const q = p(x, z);
+      ctx.fillStyle = i % 4 ? 'rgba(35,59,39,.7)' : 'rgba(57,79,49,.68)';
+      ctx.beginPath();
+      ctx.arc(q.x, q.y, 2 + i % 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    label('DRANE VALE', 0, -3200, 19, '#403b2b');
+    label('THE HOLLOW REACH', -2000, 28500, 21, '#403b2b');
+    label('BLACKPINE FOREST', -15100, 43100, 14, '#e1d8b8');
+    label('EMBER WASTES', 8600, 37200, 14, '#f0d7b3');
+    label('DROWNED MIRE', -11300, 46700, 13, '#e0dfd1');
+    label('BONE CROWN', 8200, 50800, 14, '#514d42');
+    label('THE RIVER SABLE', -6000, 6000, 12, '#274d5d');
+    marker(0, 0, 'Drane Vale', 'village');
+    (C.places && C.places.shrines || []).forEach((s) => marker(s.x, s.z, s.name, 'shrine'));
+    if (C.places && C.places.keep) marker(C.places.keep.x, C.places.keep.z, 'Sunken Keep', 'camp');
+    (C.reach && C.reach.villages || []).forEach((v) => marker(v.x, v.z, v.name, 'village'));
+    (C.reach && C.reach.camps || []).forEach((c) => marker(c.x, c.z, c.name, 'camp'));
+    (C.reach && C.reach.people && C.reach.people.NPCS || []).forEach((n) => {
+      if (n.questGiver) marker(n.x, n.z, n.name, 'village');
+    });
+
+    if (target) {
+      const q = p(target.x, target.z);
+      ctx.beginPath();
+      ctx.arc(q.x, q.y, 11, 0, Math.PI * 2);
+      ctx.strokeStyle = '#fbf0d2';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(q.x, q.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ca4b38';
+      ctx.fill();
+    }
+    if (player) {
+      const q = p(player.x, player.z);
+      ctx.beginPath();
+      ctx.arc(q.x, q.y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = '#54e4e6';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#10282a';
+      ctx.stroke();
+    }
+  }
+
   const hud = {
     build,
     stick,
@@ -263,6 +514,75 @@
       els.qTitle.textContent = title;
       els.qObj.textContent = objective;
       els.qDist.textContent = dist == null ? '' : Math.round(dist / 10) + ' m';
+    },
+
+    setFood(food, max) {
+      build();
+      const cap = Math.max(1, max || 100);
+      const value = Math.max(0, Math.min(cap, Math.round(food || 0)));
+      els.foodFill.style.width = (value / cap * 100) + '%';
+      els.foodText.textContent = 'Food ' + value + ' / ' + cap;
+      els.foodTrack.classList.toggle('low', value <= 25);
+    },
+
+    inventoryChanged(items, food, max) {
+      build();
+      hud.setFood(food, max);
+      els.inventoryList.replaceChildren();
+      const names = Object.keys(items || {}).filter((name) => items[name] > 0);
+      if (!names.length) {
+        els.inventoryList.appendChild(el('div', 'cy-pack-empty', 'Your pack is empty. Gather wild plants with [T].'));
+        return;
+      }
+      names.forEach((name) => {
+        const row = el('div', 'cy-pack-row');
+        const text = el('div', 'cy-pack-name', name + ' × ' + items[name]);
+        const eat = el('button', 'cy-pack-eat', 'Eat');
+        eat.type = 'button';
+        eat.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (C.herbs && C.herbs.eat) C.herbs.eat(name);
+        });
+        row.appendChild(text);
+        row.appendChild(eat);
+        els.inventoryList.appendChild(row);
+      });
+    },
+
+    updateWorld(player, target, canCollect) {
+      els.use.textContent = canCollect ? 'T' : 'E';
+      els.use.dataset.collect = canCollect ? 'true' : 'false';
+      if (els.mapPanel && els.mapPanel.classList.contains('on') && performance.now() - mapUpdateAt > 450) {
+        mapUpdateAt = performance.now();
+        drawMap(player, target);
+      }
+    },
+
+    toggleMap(force) {
+      build();
+      const open = force == null ? !els.mapPanel.classList.contains('on') : !!force;
+      els.mapPanel.classList.toggle('on', open);
+      if (C.freeze) C.freeze(open);
+      if (open) {
+        els.inventoryPanel.classList.remove('on');
+        drawMap(C.player && C.player(), null);
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+    },
+
+    toggleInventory(force) {
+      build();
+      const open = force == null ? !els.inventoryPanel.classList.contains('on') : !!force;
+      els.inventoryPanel.classList.toggle('on', open);
+      if (C.freeze) C.freeze(open);
+      if (open) {
+        els.mapPanel.classList.remove('on');
+        if (document.pointerLockElement) document.exitPointerLock();
+      }
+    },
+
+    get overlaysOpen() {
+      return !!(els.mapPanel && (els.mapPanel.classList.contains('on') || els.inventoryPanel.classList.contains('on')));
     },
 
     setCompass(angle, dist) {
